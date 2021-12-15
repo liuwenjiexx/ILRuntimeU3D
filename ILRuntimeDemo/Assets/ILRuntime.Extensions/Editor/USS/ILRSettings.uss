@@ -1,0 +1,90 @@
+.blod {
+    -unity-font-style: bold;
+}
+
+.panel {
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgb(34, 34, 34);
+    border-right-color: rgb(34, 34, 34);
+    border-top-color: rgb(34, 34, 34);
+    border-bottom-color: rgb(34, 34, 34);
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.panel .panel_title {
+    font-size: 12px;
+    -unity-font-style: bold;
+    margin-left: 0;
+    margin-top: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-right: 0;
+    margin-bottom: 2px;
+}
+
+.title {
+    font-size: 15px;
+    -unity-font-style: bold;
+    margin-left: 5px;
+    margin-top: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 2px;
+    padding-bottom: 5px;
+}
+
+#scrollview {
+    flex-basis: 100%;
+}
+
+#settings_panel #setting_item {
+    flex-direction: row;
+}
+
+#settings_panel #setting_item .label {
+    width: 100px;
+}
+
+#settings_panel #setting_item .value {
+    flex-direction: row;
+    flex-basis: 100%;
+}
+
+.button_open_file {
+    background-color: rgba(0, 0, 0, 0);
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.unity-base-field_label {
+}
+
+.error {
+    color: rgba(255, 0, 0, 255);
+}

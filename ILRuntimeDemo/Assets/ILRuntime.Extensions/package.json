@@ -1,0 +1,13 @@
+{
+  "name": "unity.ilruntime.extensions",
+  "displayName": "ILRuntime Extensions",
+  "version": "0.0.1-preview",
+  "unity": "2020.1",
+  "description": "ILRuntime 扩展工具",
+  "dependencies": {
+    "nuget.mono-cecil": "0.1.6"
+  },
+  "hideInEditor": false,
+  "samples": [
+  ]
+}
