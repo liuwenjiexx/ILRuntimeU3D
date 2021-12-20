@@ -8,7 +8,7 @@ using UnityEngine;
 using AppDomain = ILRuntime.Runtime.Enviorment.AppDomain;
 using UnityEngine.ILRuntime.Extensions;
 
-namespace UnityEditor.ILRuntime.Extensions
+namespace UnityEngine.ILRuntime.Extensions
 {
     public static class Extensions
     {

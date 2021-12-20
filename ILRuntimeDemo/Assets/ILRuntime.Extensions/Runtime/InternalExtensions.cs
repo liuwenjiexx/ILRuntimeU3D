@@ -7,7 +7,7 @@ using System.Reflection;
 using UnityEngine;
 
 
-namespace UnityEditor.ILRuntime.Extensions
+namespace UnityEngine.ILRuntime.Extensions
 {
     internal static class InternalExtensions
     {
