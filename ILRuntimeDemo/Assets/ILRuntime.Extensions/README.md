@@ -36,3 +36,72 @@
 
 ![Menu_OpenILRProject](Doc~/Images/Menu_OpenILRProject.png)
 
+## 使用委托调用 ILR 方法
+
+简化 `ILR` 方法
+
+```c#
+//--- ILR ---
+public int Add(int a,int b)
+{
+	return a + b;
+}
+
+//--- CLR ---
+var addFunc = appdomain.CreateDelegate<Func<int, int, int>>(obj, type.GetMethod("Add", 2));
+addFunc(1, 2)
+//result: 3
+```
+
+**生成步骤**
+
+1. 生成 Delegate 代码
+
+使用 `CLRCallILRAttribute` 声明要生成的委托
+
+```c#
+public static class ILRDeclares
+{
+    [CLRCallILR]
+    public static IEnumerable<Type> GetTypes()
+    {
+        yield return typeof(Func<int, int, int>);
+    }
+
+    [CLRCallILR]
+    public static List<Type> Types
+    {
+        get
+        {
+            List<Type> list = new List<Type>();
+            list.Add(typeof(Func<int, int, int>));
+            return list;
+        }
+    }
+}
+```
+
+2. 点击菜单 `ILRuntime/Generate Code` 生成，代码在 `Delegates.cs`
+
+```c#
+//Auto Generated
+[CLRCallILRImplementAttribute]
+static global::System.Func<int, int, int> Gen_Invoke_ILR_Delegate_0(AppDomain appDomain, object obj, IMethod method)
+{
+    return (arg0, arg1) =>
+    {
+        int result;
+        using (var ctx = appDomain.BeginInvoke(method))
+        {
+            if (method.HasThis)
+                ctx.PushObject(obj);
+            ctx.PushInteger(arg0);
+            ctx.PushInteger(arg1);
+            ctx.Invoke();
+            result = ctx.ReadInteger();
+        }
+        return result;
+    };
+}
+```
+
