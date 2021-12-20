@@ -2,6 +2,7 @@
 using System.Collections;
 using System.IO;
 using ILRuntime.Runtime.Enviorment;
+using XLua;
 //下面这行为了取消使用WWW的警告，Unity2018以后推荐使用UnityWebRequest，处于兼容性考虑Demo依然使用WWW
 #pragma warning disable CS0618
 public class HelloWorld : MonoBehaviour
@@ -16,7 +17,11 @@ public class HelloWorld : MonoBehaviour
     {
         StartCoroutine(LoadHotFixAssembly());
     }
-
+    [LuaCallCSharp]
+    public static int Add(int a, int b)
+    {
+        return a + b;
+    }
     IEnumerator LoadHotFixAssembly()
     {
         //首先实例化ILRuntime的AppDomain，AppDomain是一个应用程序域，每个AppDomain都是一个独立的沙盒
@@ -73,13 +78,17 @@ public class HelloWorld : MonoBehaviour
         appdomain.UnityMainThreadID = System.Threading.Thread.CurrentThread.ManagedThreadId;
 #endif
         //这里做一些ILRuntime的注册，HelloWorld示例暂时没有需要注册的
+
+        appdomain.DebugService.StartDebugService(56000);
+
     }
 
+    [ContextMenu("Test")]
     void OnHotFixLoaded()
     {
         //HelloWorld，第一次方法调用
         appdomain.Invoke("HotFix_Project.InstanceClass", "StaticFunTest", null, null);
-
+        
     }
 
     private void OnDestroy()
