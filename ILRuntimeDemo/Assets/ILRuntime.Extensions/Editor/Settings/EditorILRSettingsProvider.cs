@@ -62,14 +62,14 @@ namespace UnityEditor.ILRuntime.Extensions
                 lbl.parent.Q<Label>(null, "label").RemoveFromClassList("error");
             }
 
-            var txtField = settingsRoot.Q<TextField>("proj_path");
-            txtField.value = EditorILRSettings.ProjectPath;
-            txtField.RegisterValueChangedCallback((e) =>
+            var txtProjPathField = settingsRoot.Q<TextField>("proj_path");
+            txtProjPathField.value = EditorILRSettings.ProjectPath;
+            txtProjPathField.RegisterValueChangedCallback((e) =>
             {
                 EditorILRSettings.ProjectPath = e.newValue;
             });
 
-            txtField.parent.Q<Button>("btn_open_file").clicked += () =>
+            txtProjPathField.parent.Q<Button>("btn_open_file").clicked += () =>
             {
                 string dir = "";
                 foreach (var path1 in Directory.GetFiles(".", "*.sln", SearchOption.AllDirectories))
@@ -94,7 +94,36 @@ namespace UnityEditor.ILRuntime.Extensions
                     {
                         startIndex++;
                     }
-                    txtField.value = path.Substring(startIndex);
+                    txtProjPathField.value = path.Substring(startIndex);
+                }
+            };
+
+            var txtGenPathField = settingsRoot.Q<TextField>("gen_path");
+            txtGenPathField.value = EditorILRSettings.GeneratedCodePath;
+            txtGenPathField.RegisterValueChangedCallback((e) =>
+            {
+                EditorILRSettings.GeneratedCodePath = e.newValue;
+            });
+
+            txtGenPathField.parent.Q<Button>("btn_open_file").clicked += () =>
+            {
+                string dir = EditorILRSettings.GeneratedCodePath;
+
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    dir = Path.GetFullPath(dir);
+                }
+
+                string path = EditorUtility.OpenFolderPanel("Select Generated Code Folder", dir, "");
+                if (!string.IsNullOrEmpty(path))
+                {
+                    string baseDir = Path.GetFullPath(".");
+                    int startIndex = baseDir.Length;
+                    if (!(baseDir.EndsWith("\\") || baseDir.EndsWith("/")))
+                    {
+                        startIndex++;
+                    }
+                    txtGenPathField.value = path.Substring(startIndex);
                 }
             };
 

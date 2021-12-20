@@ -1,5 +1,4 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="/Assets/ILRuntime.Extensions/Editor/USS/ILRSettings.uss" />
     <ui:VisualElement>
         <ui:Label text="ILRuntime Extensions" name="title" class="title" />
         <ui:ScrollView name="scrollview" style="display: none;" />
@@ -10,7 +9,11 @@
                     <ui:Label text="Visual Studio" display-tooltip-when-elided="true" name="vs_home" />
                 </ui:VisualElement>
                 <ui:VisualElement name="setting_item">
-                    <ui:TextField picking-mode="Ignore" name="proj_path" label="Project Path" style="flex-shrink: 1; flex-basis: 100%;" />
+                    <ui:TextField picking-mode="Ignore" name="proj_path" label="Project File(sln)" style="flex-shrink: 1; flex-basis: 100%;" />
+                    <ui:Button text="..." display-tooltip-when-elided="true" name="btn_open_file" class="button_open_file" />
+                </ui:VisualElement>
+                <ui:VisualElement name="setting_item">
+                    <ui:TextField picking-mode="Ignore" name="gen_path" label="Generated Code" style="flex-shrink: 1; flex-basis: 100%;" />
                     <ui:Button text="..." display-tooltip-when-elided="true" name="btn_open_file" class="button_open_file" />
                 </ui:VisualElement>
                 <ui:VisualElement name="setting_item">
