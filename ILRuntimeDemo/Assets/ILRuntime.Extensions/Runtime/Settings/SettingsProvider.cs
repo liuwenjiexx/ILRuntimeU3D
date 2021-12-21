@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace UnityEditor.Internal
+namespace UnityEngine.Internal
 {
 
     /// <summary>
@@ -160,7 +160,7 @@ namespace UnityEditor.Internal
                 filePath = Path.Combine(filePath, "UserSettings");
             }
             filePath = Path.Combine(filePath, "Packages", packageName);
-
+             
             filePath = Path.Combine(filePath, Path.GetFileNameWithoutExtension(FileName));
 
             return filePath;

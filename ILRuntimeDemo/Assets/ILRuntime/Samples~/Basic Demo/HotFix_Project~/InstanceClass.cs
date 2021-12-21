@@ -46,6 +46,12 @@ namespace HotFix_Project
             lst = new List<int>();
             lst.Add(id);
         }
+
+        public int Add(int a,int b)
+        {
+            return a + b;
+        }
+
     }
 
 

@@ -5,11 +5,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using UnityEditor;
 using UnityEditor.ILRuntime.Extensions;
 using UnityEngine;
 using UnityEngine.ILRuntime.Extensions;
+using UnityEngine.Internal;
 using AppDomain = ILRuntime.Runtime.Enviorment.AppDomain;
 
 namespace UnityEditor.ILRuntime.Extensions
@@ -36,6 +38,7 @@ namespace UnityEditor.ILRuntime.Extensions
         }
 
 
+
         [MenuItem(MenuPrefix + "Generate Code")]
         public static void GenerateCode()
         {
@@ -44,16 +47,7 @@ namespace UnityEditor.ILRuntime.Extensions
             if (!Directory.Exists(outputPath))
                 Directory.CreateDirectory(outputPath);
 
-            Type type = Type.GetType("ILRuntimeCLRBinding");
-            if (type == null)
-            {
-                foreach (var ass in System.AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    type = ass.GetType("ILRuntimeCLRBinding");
-                    if (type != null)
-                        break;
-                }
-            }
+            Type type = System.AppDomain.CurrentDomain.FindType("ILRuntimeCLRBinding");
 
             if (type != null)
             {
@@ -122,8 +116,8 @@ namespace UnityEditor.ILRuntime.Extensions
                 }
 
                 //static type
-                if (!(type.IsAbstract && type.IsSealed))
-                    continue;
+                //if (!(type.IsAbstract && type.IsSealed))
+                //    continue;
 
                 foreach (var mInfo in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
                 {
@@ -216,9 +210,152 @@ namespace UnityEditor.ILRuntime.Extensions
                     int index = 0;
                     int argIndex;
                     string argVarFormat = "arg{0}";
+
+
+                    //RegisterDelegate
+                    writter.WriteLine("public static void RegisterDelegate(AppDomain appDomain)")
+                        .WriteLine("{");
+
+                    using (writter.BeginIndent())
+                    {
+                        foreach (var type in delegateTypes)
+                        {
+                            if (type.IsGenericType)
+                            {
+                                string fullName = type.FullName;
+                                if (fullName.StartsWith("System.Func`"))
+                                {
+                                    writter.Write("appDomain.DelegateManager.RegisterFunctionDelegate<");
+                                }
+                                else if (fullName.StartsWith("System.Action`"))
+                                {
+                                    writter.Write("appDomain.DelegateManager.RegisterMethodDelegate<");
+                                }
+
+                                Type[] argTypes1 = type.GetGenericArguments();
+                                writter.WriteTypeName(argTypes1).Write(">();")
+                                    .WriteLine();
+                                continue;
+                            }
+
+                            if (type == typeof(Action))
+                            {
+                                continue;
+                            }
+
+                            var method = type.GetMethod("Invoke");
+                            Type[] argTypes = method.GetParameters().Select(o => o.ParameterType).ToArray();
+
+                            bool hasRefOut = false;
+
+                            foreach(var arg in method.GetParameters())
+                            {
+                                if (arg.ParameterType.IsByRef)
+                                {
+                                    hasRefOut = true;
+                                }
+                            }
+
+                            if (hasRefOut)
+                                continue;
+
+                            writter.Write("appDomain.DelegateManager.RegisterDelegateConvertor<").WriteTypeName(type).WriteLine(">((del) =>")
+                                .WriteLine("{");
+
+                            using (writter.BeginIndent())
+                            {
+                                writter.Write("return new ").WriteTypeName(type).Write("((");
+
+                                for (int i = 0; i < argTypes.Length; i++)
+                                {
+                                    if (i > 0)
+                                    {
+                                        writter.Write(", ");
+                                    }
+                                    writter.WriteFormat(argVarFormat, i);
+                                }
+
+                                writter.WriteLine(") =>")
+                                    .WriteLine("{");
+                                using (writter.BeginIndent())
+                                {
+
+                                    if (method.ReturnType != typeof(void))
+                                    {
+                                        writter.Write("return ");
+                                    }
+                                    writter.Write("((");
+                                    if (method.ReturnType != typeof(void))
+                                    {
+                                        writter.Write("System.Func<").WriteTypeName(argTypes);
+
+                                        if (argTypes.Length > 0)
+                                            writter.Write(", ");
+
+                                        writter.WriteTypeName(method.ReturnType).Write(">");
+                                    }
+                                    else
+                                    {
+                                        writter.Write("System.Action");
+                                        if (argTypes.Length > 0)
+                                        {
+                                            writter.Write("<").WriteTypeName(argTypes).Write(">");
+                                        }
+                                        else
+                                        {
+                                            writter.WriteTypeName(argTypes);
+                                        }
+                                    }
+
+                                    writter.Write(")del)(");
+
+                                    for (int i = 0; i < argTypes.Length; i++)
+                                    {
+                                        if (i > 0)
+                                        {
+                                            writter.Write(", ");
+                                        }
+                                        writter.WriteFormat(argVarFormat, i);
+                                    }
+                                    writter.WriteLine(");");
+                                }
+                                writter.WriteLine("});");
+                            }
+                            writter.WriteLine("});");
+
+                        }
+                    }
+                    writter.WriteLine("}")
+                        .WriteLine();
+
+                    //ILR Delegate implement
+                    argIndex = 0;
                     foreach (var type in delegateTypes)
                     {
                         var method = type.GetMethod("Invoke");
+                        var parameters = method.GetParameters();
+                        (ParameterInfo, bool, bool, Type)[] paramInfos = new (ParameterInfo, bool, bool, Type)[parameters.Length];
+
+                        for (int i = 0; i < parameters.Length; i++)
+                        {
+                            var arg = parameters[i];
+                            Type paramType = arg.ParameterType;
+                            var parm2 = paramInfos[i];
+                            parm2.Item1 = arg;
+                            parm2.Item4 = arg.ParameterType;
+                            parm2.Item2 = paramType.IsByRef && !arg.IsOut;
+                            parm2.Item3 = paramType.IsByRef && arg.IsOut;
+                            if (paramType.IsByRef)
+                            {
+                                int refIndex = paramType.AssemblyQualifiedName.IndexOf('&');
+                                string typeName2 = paramType.AssemblyQualifiedName.Substring(0, refIndex) + paramType.AssemblyQualifiedName.Substring(refIndex + 1);
+                                paramType = Type.GetType(typeName2);
+                                if (paramType == null)
+                                    throw new Exception("Not found type: " + typeName2);
+                                parm2.Item4 = paramType;
+                            }
+                            paramInfos[i] = parm2;
+                        }
 
                         writter.WriteLine($"[{nameof(CLRCallILRImplementAttribute)}]");
 
@@ -234,15 +371,26 @@ namespace UnityEditor.ILRuntime.Extensions
                             writter.Write(@"return (");
                             argIndex = 0;
 
-                            var parameters = method.GetParameters();
 
-                            foreach (var arg in parameters)
+
+                            foreach (var arg in paramInfos)
                             {
                                 if (argIndex > 0)
                                 {
                                     writter.Write(", ");
                                 }
-                                writter.Write(string.Format(argVarFormat, argIndex));
+
+                                Type paramType = arg.Item4;
+                                if (arg.Item2)
+                                {
+                                    writter.Write("ref ");
+                                }
+                                else if (arg.Item3)
+                                {
+                                    writter.Write("out ");
+                                }
+
+                                writter.WriteTypeName(paramType).Write(" ").WriteFormat(argVarFormat, argIndex);
                                 argIndex++;
                             }
 
@@ -262,23 +410,73 @@ namespace UnityEditor.ILRuntime.Extensions
                                     .WriteLine("{");
                                 using (writter.BeginIndent())
                                 {
+                                    //push ref/out
+                                    for (int i = 0; i < paramInfos.Length; i++)
+                                    {
+                                        var arg = paramInfos[i];
+                                        if (arg.Item2)
+                                        {
+                                            writter.Write("ctx.").PushValue(arg.Item4, string.Format(argVarFormat, i)).WriteLine(";");
+                                        }
+                                        else if (arg.Item3)
+                                        {
+                                            writter.Write("ctx.").PushValue(arg.Item4, "default").WriteLine(";");
+                                        }
+                                    }
+
+
+                                    //push this
                                     writter.WriteLine($"if (method.HasThis)");
                                     using (writter.BeginIndent())
                                     {
                                         writter.WriteLine($"ctx.PushObject(obj);");
                                     }
 
-                                    argIndex = 0;
-                                    foreach (var arg in parameters)
+                                    //push arg
+                                    for (int i = 0; i < paramInfos.Length; i++)
                                     {
-                                        writter.Write("ctx.").PushValue(arg.ParameterType, string.Format(argVarFormat, argIndex)).WriteLine(";");
-                                        argIndex++;
+                                        var arg = paramInfos[i];
+                                        if (arg.Item2 || arg.Item3)
+                                            continue;
+                                        writter.Write("ctx.").PushValue(arg.Item4, string.Format(argVarFormat, i)).WriteLine(";");
+                                    }
+
+                                    //PushReference
+                                    for (int i = 0, j = 0; i < paramInfos.Length; i++)
+                                    {
+                                        var arg = paramInfos[i];
+                                        if (arg.Item2 || arg.Item3)
+                                        {
+                                            writter.WriteLine($"ctx.PushReference({j});");
+                                            j++;
+                                        }
                                     }
                                     writter.WriteLine($"ctx.Invoke();");
 
+                                    //ReadReference
+                                    for (int i = 0, j = 0; i < paramInfos.Length; i++)
+                                    {
+                                        var arg = paramInfos[i];
+                                        if (arg.Item2 || arg.Item3)
+                                        {
+                                            writter.WriteFormat(argVarFormat, i).Write(" = ").Write($"ctx.ReadObject<").WriteTypeName(arg.Item4).WriteLine($">({j});");
+                                            j++;
+                                        }
+                                    }
+
                                     if (returnType != typeof(void))
                                     {
-                                        writter.Write("result = ").Write("ctx.").ReadValue(returnType).WriteLine(";");
+                                        writter.Write("result = ");
+                                        bool conv = false;
+                                        if (!IsBaseReadValue(returnType))
+                                        {
+                                            conv = true;
+                                        }
+                                        if (conv)
+                                        {
+                                            writter.Write("(").WriteTypeName(returnType).Write(")");
+                                        }
+                                        writter.Write("ctx.").ReadValue(returnType).WriteLine(";");
                                     }
                                 }
                                 writter.WriteLine("}");
@@ -336,10 +534,31 @@ namespace UnityEditor.ILRuntime.Extensions
             return writter;
         }
 
+        static bool IsBaseReadValue(Type type)
+        {
+            TypeCode typeCode = Type.GetTypeCode(type);
+
+            if (type.IsPrimitive)
+            {
+                switch (typeCode)
+                {
+                    case TypeCode.Int32:
+                    case TypeCode.Int64:
+                    case TypeCode.Single:
+                    case TypeCode.Double:
+                    case TypeCode.Boolean:
+                        return true;
+                        break;
+                }
+            }
+            return false;
+        }
+
         static CodeWritter ReadValue(this CodeWritter writter, Type type)
         {
             TypeCode typeCode = Type.GetTypeCode(type);
             bool handle = false;
+
             if (type.IsPrimitive)
             {
                 switch (typeCode)
@@ -369,9 +588,7 @@ namespace UnityEditor.ILRuntime.Extensions
 
             if (!handle)
             {
-                writter.Write("ReadObject(");
-                writter.WriteTypeName(type);
-                writter.Write(")");
+                writter.Write("ReadObject(").WriteType(type).Write(")");
                 handle = true;
             }
             return writter;

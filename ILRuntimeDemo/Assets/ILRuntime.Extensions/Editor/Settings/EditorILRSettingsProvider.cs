@@ -8,6 +8,7 @@ using UnityEngine.UIElements;
 using System.Reflection;
 using System.IO;
 using UnityEditor.Internal;
+using UnityEngine.ILRuntime.Extensions;
 
 namespace UnityEditor.ILRuntime.Extensions
 {
@@ -126,6 +127,15 @@ namespace UnityEditor.ILRuntime.Extensions
                     txtGenPathField.value = path.Substring(startIndex);
                 }
             };
+
+            var txtStreamingAssetsPathField = settingsRoot.Q<TextField>("streamingassets_path");
+            txtStreamingAssetsPathField.value = ILRSettings.StreamingAssetsPath;
+            txtStreamingAssetsPathField.RegisterValueChangedCallback((e) =>
+            {
+                ILRSettings.StreamingAssetsPath = e.newValue;
+            });
+
+
 
             var tglEnabled = settingsRoot.Q<Toggle>("auto_compile");
             tglEnabled.value = EditorILRSettings.AutoBuild;

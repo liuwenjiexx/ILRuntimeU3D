@@ -17,6 +17,9 @@
                     <ui:Button text="..." display-tooltip-when-elided="true" name="btn_open_file" class="button_open_file" />
                 </ui:VisualElement>
                 <ui:VisualElement name="setting_item">
+                    <ui:TextField picking-mode="Ignore" name="streamingassets_path" label="StreamingAssets Path" style="flex-shrink: 1; flex-basis: 100%;" />
+                </ui:VisualElement>
+                <ui:VisualElement name="setting_item">
                     <ui:Toggle label="Auto Compile Assemblies" name="auto_compile" class="value" />
                 </ui:VisualElement>
             </ui:VisualElement>

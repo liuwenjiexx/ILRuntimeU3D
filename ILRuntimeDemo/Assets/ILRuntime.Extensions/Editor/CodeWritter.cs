@@ -60,6 +60,11 @@ namespace UnityEditor.ILRuntime.Extensions
             return this;
         }
 
+        public CodeWritter WriteFormat(string format, params object[] args)
+        {
+            return Write(string.Format(format, args));
+        }
+
         public CodeWritter WriteLine(string value)
         {
             if (!string.IsNullOrEmpty(value))
@@ -81,7 +86,7 @@ namespace UnityEditor.ILRuntime.Extensions
         }
 
 
-        public CodeWritter WriteTypeName(Type type)
+        public CodeWritter WriteTypeName(Type type, bool isGlobal = true)
         {
 
             if (overrideTypeNames == null)
@@ -135,6 +140,32 @@ namespace UnityEditor.ILRuntime.Extensions
                 Write(type.Name);
             }
 
+            return this;
+        }
+
+        public CodeWritter WriteTypeName(IEnumerable<Type> types)
+        {
+            bool first = true;
+            foreach (var type in types)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    Write(", ");
+                }
+                WriteTypeName(type);
+            }
+            return this;
+        }
+
+        public CodeWritter WriteType(Type type)
+        {
+            Write("typeof(")
+                .WriteTypeName(type)
+                .Write(")");
             return this;
         }
 

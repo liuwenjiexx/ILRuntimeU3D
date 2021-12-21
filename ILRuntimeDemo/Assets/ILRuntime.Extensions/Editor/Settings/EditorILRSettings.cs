@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace UnityEditor.ILRuntime.Extensions
 {
-    using SettingsProvider = UnityEditor.Internal.SettingsProvider;
+    using SettingsProvider = UnityEngine.Internal.SettingsProvider;
 
     [Serializable]
     public class EditorILRSettings
