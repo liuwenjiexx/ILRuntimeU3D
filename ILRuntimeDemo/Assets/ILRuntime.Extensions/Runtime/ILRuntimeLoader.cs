@@ -8,128 +8,131 @@ using UnityEngine.Networking;
 using System;
 using AppDomain = ILRuntime.Runtime.Enviorment.AppDomain;
 
-public class ILRuntimeLoader : MonoBehaviour
+namespace UnityEngine.ILRuntime.Extensions
 {
-
-    AppDomain appDomain;
-    List<IDisposable> disposables;
-
-    public AppDomain AppDomain { get => appDomain; }
-
-    // Start is called before the first frame update
-   protected virtual void Start()
-    {
-        StartCoroutine(LoadILRAssembly());
-    }
-
-    string GetUrl(string url)
+    public class ILRuntimeLoader : MonoBehaviour
     {
 
-        if (url.IndexOf("://") < 0)
-            url = "file:///" + url;
-        return url;
-    }
+        AppDomain appDomain;
+        List<IDisposable> disposables;
 
+        public AppDomain AppDomain { get => appDomain; }
 
-
-    IEnumerator LoadILRAssembly()
-    {
-        appDomain = new AppDomain();
-
-        byte[] dllBytes = null, pdbBytes = null;
-
-        string assemblyName;
-        disposables = new List<IDisposable>();
-
-        foreach (var assembliyPath in ILRSettings.StreamingAssetsPath.Split('|'))
+        // Start is called before the first frame update
+        protected virtual void Start()
         {
-            assemblyName = Path.GetFileNameWithoutExtension(assembliyPath);
-            dllBytes = null;
-            pdbBytes = null;
+            StartCoroutine(LoadILRAssembly());
+        }
 
-            using (var request = UnityWebRequest.Get(GetUrl(Application.streamingAssetsPath + $"/{assemblyName}.dll")))
+        string GetUrl(string url)
+        {
+
+            if (url.IndexOf("://") < 0)
+                url = "file:///" + url;
+            return url;
+        }
+
+
+
+        IEnumerator LoadILRAssembly()
+        {
+            appDomain = new AppDomain();
+
+            byte[] dllBytes = null, pdbBytes = null;
+
+            string assemblyName;
+            disposables = new List<IDisposable>();
+
+            foreach (var assembliyPath in ILRSettings.StreamingAssetsPath.Split('|'))
             {
-                yield return request.SendWebRequest();
-                if (!string.IsNullOrEmpty(request.error))
-                    throw new System.Exception(request.error + "\n" + assembliyPath);
+                assemblyName = Path.GetFileNameWithoutExtension(assembliyPath);
+                dllBytes = null;
+                pdbBytes = null;
 
-                dllBytes = request.downloadHandler.data;
-            }
-
-            using (var request = UnityWebRequest.Get(GetUrl(Application.streamingAssetsPath + $"/{assemblyName}.pdb")))
-            {
-                yield return request.SendWebRequest();
-                if (!string.IsNullOrEmpty(request.error))
+                using (var request = UnityWebRequest.Get(GetUrl(Application.streamingAssetsPath + $"/{assemblyName}.dll")))
                 {
+                    yield return request.SendWebRequest();
+                    if (!string.IsNullOrEmpty(request.error))
+                        throw new System.Exception(request.error + "\n" + assembliyPath);
+
+                    dllBytes = request.downloadHandler.data;
+                }
+
+                using (var request = UnityWebRequest.Get(GetUrl(Application.streamingAssetsPath + $"/{assemblyName}.pdb")))
+                {
+                    yield return request.SendWebRequest();
+                    if (!string.IsNullOrEmpty(request.error))
+                    {
 #if UNITY_EDITOR
-                    Debug.LogError(request.error);
+                        Debug.LogError(request.error);
 #endif
+                    }
+                    else
+                    {
+                        pdbBytes = request.downloadHandler.data;
+                    }
                 }
-                else
+
+                MemoryStream fs = null, p = null;
+                fs = new MemoryStream(dllBytes);
+                disposables.Add(fs);
+
+                if (pdbBytes != null)
                 {
-                    pdbBytes = request.downloadHandler.data;
+                    p = new MemoryStream(pdbBytes);
+                    disposables.Add(p);
                 }
+
+                try
+                {
+                    appDomain.LoadAssembly(fs, p, new global::ILRuntime.Mono.Cecil.Pdb.PdbReaderProvider());
+                }
+                catch
+                {
+                    Debug.LogError("加载热更DLL失败");
+                }
+
             }
 
-            MemoryStream fs = null, p = null;
-            fs = new MemoryStream(dllBytes);
-            disposables.Add(fs);
 
-            if (pdbBytes != null)
+            OnILRInitialize();
+
+            appDomain.DebugService.StartDebugService(56000);
+
+
+            OnILRLoaded();
+        }
+        protected virtual void OnILRInitialize()
+        {
+#if DEBUG && (UNITY_EDITOR || UNITY_ANDROID || UNITY_IPHONE)
+            appDomain.UnityMainThreadID = System.Threading.Thread.CurrentThread.ManagedThreadId;
+#endif
+
+            appDomain.InitalizeExtensions();
+        }
+
+        protected virtual void OnILRLoaded()
+        {
+
+        }
+
+        private void OnDestroy()
+        {
+            if (appDomain != null)
             {
-                p = new MemoryStream(pdbBytes);
-                disposables.Add(p);
+                appDomain.Dispose();
+                appDomain = null;
             }
-
             try
             {
-                appDomain.LoadAssembly(fs, p, new ILRuntime.Mono.Cecil.Pdb.PdbReaderProvider());
+                foreach (var o in disposables)
+                {
+                    o.Dispose();
+                }
+                disposables.Clear();
             }
-            catch
-            {
-                Debug.LogError("加载热更DLL失败");
-            }
+            catch { }
 
         }
-
-
-        OnILRInitialize();
-
-        appDomain.DebugService.StartDebugService(56000);
-
-
-        OnILRLoaded();
-    }
-    protected virtual void OnILRInitialize()
-    {
-#if DEBUG && (UNITY_EDITOR || UNITY_ANDROID || UNITY_IPHONE)
-        appDomain.UnityMainThreadID = System.Threading.Thread.CurrentThread.ManagedThreadId;
-#endif
-
-        appDomain.InitalizeExtensions();
-    }
-
-    protected virtual void OnILRLoaded()
-    {
-
-    }
-
-    private void OnDestroy()
-    {
-        if (appDomain != null)
-        {
-            appDomain.Dispose();
-            appDomain = null;
-        }
-        try
-        {
-            foreach (var o in disposables)
-            {
-                o.Dispose();
-            }
-            disposables.Clear();
-        }
-        catch { }
-
     }
 }
