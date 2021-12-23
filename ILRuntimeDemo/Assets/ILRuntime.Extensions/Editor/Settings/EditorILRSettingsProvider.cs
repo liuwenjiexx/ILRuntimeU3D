@@ -100,15 +100,15 @@ namespace UnityEditor.ILRuntime.Extensions
             };
 
             var txtGenPathField = settingsRoot.Q<TextField>("gen_path");
-            txtGenPathField.value = EditorILRSettings.GeneratedCodePath;
+            txtGenPathField.value = EditorILRSettings.GenerateCodePath;
             txtGenPathField.RegisterValueChangedCallback((e) =>
             {
-                EditorILRSettings.GeneratedCodePath = e.newValue;
+                EditorILRSettings.GenerateCodePath = e.newValue;
             });
 
             txtGenPathField.parent.Q<Button>("btn_open_file").clicked += () =>
             {
-                string dir = EditorILRSettings.GeneratedCodePath;
+                string dir = EditorILRSettings.GenerateCodePath;
 
                 if (!string.IsNullOrEmpty(dir))
                 {
@@ -127,6 +127,33 @@ namespace UnityEditor.ILRuntime.Extensions
                     txtGenPathField.value = path.Substring(startIndex);
                 }
             };
+
+
+            var txtAssemblyNameField = settingsRoot.Q<TextField>("assembly_name");
+            txtAssemblyNameField.value = ILRSettings.AssemblyName;
+            txtAssemblyNameField.RegisterValueChangedCallback((e) =>
+            {
+                ILRSettings.AssemblyName = e.newValue;
+            });
+
+            txtAssemblyNameField.parent.Q<Button>("btn_refresh").clicked += () =>
+            {
+                if (ILRProjectHelper.Solution == null)
+                    return;
+                string assemblyName = "";
+                foreach (var proj in ILRProjectHelper.Solution.Projects)
+                {
+                    if (!string.IsNullOrEmpty(proj.AssemblyName))
+                    {
+                        if (assemblyName.Length > 0)
+                            assemblyName += "|";
+                        assemblyName += proj.AssemblyName;
+                    }
+                }
+
+                txtAssemblyNameField.value = assemblyName;
+            };
+
 
             var txtStreamingAssetsPathField = settingsRoot.Q<TextField>("streamingassets_path");
             txtStreamingAssetsPathField.value = ILRSettings.StreamingAssetsPath;

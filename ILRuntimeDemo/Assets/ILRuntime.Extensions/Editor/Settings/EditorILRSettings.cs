@@ -62,20 +62,13 @@ namespace UnityEditor.ILRuntime.Extensions
             set => Provider.SetProperty(nameof(IsDebug), ref Settings.isDebug, value);
         }
 
-        [SerializeField]
-        public string assemblyPath = "Assets/StreamingAssets";
-        public static string AssemblyPath
-        {
-            get => Settings.assemblyPath;
-            set => Provider.SetProperty(nameof(AssemblyPath), ref Settings.assemblyPath, value);
-        }
 
         [SerializeField]
-        public string generatedCodePath="Assets/Samples/ILRuntime/Generated";
-        public static string GeneratedCodePath
+        public string generateCodePath="Assets/Samples/ILRuntime/Generated";
+        public static string GenerateCodePath
         {
-            get => Settings.generatedCodePath;
-            set => Provider.SetProperty(nameof(GeneratedCodePath), ref Settings.generatedCodePath, value);
+            get => Settings.generateCodePath;
+            set => Provider.SetProperty(nameof(GenerateCodePath), ref Settings.generateCodePath, value);
         }
 
 

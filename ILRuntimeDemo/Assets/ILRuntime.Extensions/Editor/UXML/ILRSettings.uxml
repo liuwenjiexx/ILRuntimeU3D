@@ -5,21 +5,25 @@
         <ui:VisualElement name="root_content" style="margin-left: 5px; margin-right: 5px;">
             <ui:VisualElement name="settings_panel" class="panel">
                 <ui:VisualElement name="setting_item">
-                    <ui:Label text="Visual Studio:" display-tooltip-when-elided="true" class="unity-base-field__label label" />
+                    <ui:Label text="Visual Studio" display-tooltip-when-elided="true" class="unity-base-field__label label" />
                     <ui:Label text="Visual Studio" display-tooltip-when-elided="true" name="vs_home" />
                 </ui:VisualElement>
                 <ui:VisualElement name="setting_item">
-                    <ui:TextField picking-mode="Ignore" name="proj_path" label="Project File(sln)" style="flex-shrink: 1; flex-basis: 100%;" />
+                    <ui:TextField picking-mode="Ignore" name="proj_path" label="Project File(sln)" tooltip="Visual Studio Solution(.sln) Path" style="flex-shrink: 1; flex-basis: 100%;" />
                     <ui:Button text="..." display-tooltip-when-elided="true" name="btn_open_file" class="button_open_file" />
                 </ui:VisualElement>
                 <ui:VisualElement name="setting_item">
-                    <ui:TextField picking-mode="Ignore" name="gen_path" label="Generated Code" style="flex-shrink: 1; flex-basis: 100%;" />
+                    <ui:TextField picking-mode="Ignore" name="assembly_name" label="Assembly Name" style="flex-shrink: 1; flex-basis: 100%;" />
+                    <ui:Button text="Refresh" display-tooltip-when-elided="true" name="btn_refresh" />
+                </ui:VisualElement>
+                <ui:VisualElement name="setting_item">
+                    <ui:TextField picking-mode="Ignore" name="gen_path" label="Generate Code Path" style="flex-shrink: 1; flex-basis: 100%;" />
                     <ui:Button text="..." display-tooltip-when-elided="true" name="btn_open_file" class="button_open_file" />
                 </ui:VisualElement>
                 <ui:VisualElement name="setting_item">
                     <ui:TextField picking-mode="Ignore" name="streamingassets_path" label="StreamingAssets Path" style="flex-shrink: 1; flex-basis: 100%;" />
                 </ui:VisualElement>
-                <ui:VisualElement name="setting_item">
+                <ui:VisualElement name="assembly_names" tooltip="&apos;|&apos; 分隔多个" label="Assembly Name">
                     <ui:Toggle label="Auto Compile Assemblies" name="auto_compile" class="value" />
                 </ui:VisualElement>
             </ui:VisualElement>

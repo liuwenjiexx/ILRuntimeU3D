@@ -5,8 +5,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -21,10 +23,45 @@ namespace UnityEditor.ILRuntime.Extensions
         static bool sourceCodeChanged;
         private static object lockObj = new object();
         private static bool enabledAutoCompile;
+        static VSSolution vsSolution;
+        static string lastCompileHash;
+
+        internal static VSSolution Solution
+        {
+            get => vsSolution;
+        }
+
+        private static string LastCompileHash
+        {
+            get
+            {
+                if (lastCompileHash == null)
+                {
+                    lastCompileHash = EditorPrefs.GetString("ILRuntime.Extensions.LastCompileHash");
+
+                    if (lastCompileHash == null)
+                    {
+                        lastCompileHash = string.Empty;
+                    }
+                }
+                return lastCompileHash;
+            }
+            set
+            {
+                if (lastCompileHash != value)
+                {
+                    lastCompileHash = value;
+                    EditorPrefs.SetString("ILRuntime.Extensions.LastCompileHash", lastCompileHash);
+                }
+            }
+        }
+
 
         [InitializeOnLoadMethod]
         static void InitializeOnLoadMethod()
         {
+            LoadProject();
+
             EditorILRSettings.Provider.PropertyChanged += Provider_PropertyChanged;
             if (CanCompile())
             {
@@ -36,11 +73,51 @@ namespace UnityEditor.ILRuntime.Extensions
         {
             try
             {
-                return EditorILRSettings.AutoBuild && !string.IsNullOrEmpty(EditorILRSettings.ProjectPath) && !string.IsNullOrEmpty(VSHomePath);
+                return vsSolution != null && EditorILRSettings.AutoBuild && !string.IsNullOrEmpty(VSHomePath);
             }
             catch
             {
                 return false;
+            }
+        }
+
+        static string CalculateSourceCodeHash()
+        {
+            if (vsSolution == null)
+                return string.Empty;
+
+            int hash = 0;
+            foreach (var proj in vsSolution.Projects.OrderBy(o => o.Name))
+            {
+                foreach (var file in Directory.GetFiles(proj.FullDir, "*.cs").OrderBy(o => o))
+                {
+                    hash = CombineHashCode(hash, new FileInfo(file).LastWriteTimeUtc.ToFileTimeUtc().GetHashCode());
+                }
+            }
+            return hash.ToString();
+        }
+
+        internal static int CombineHashCode(int h1, int h2)
+        {
+            return (((h1 << 5) + h1) ^ h2);
+        }
+
+
+        static void LoadProject()
+        {
+            string path = EditorILRSettings.ProjectPath;
+            vsSolution = null;
+            if (string.IsNullOrEmpty(path))
+                return;
+            try
+            {
+                VSSolution sln = new VSSolution(path);
+                sln.Load();
+                vsSolution = sln;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
         }
 
@@ -80,6 +157,11 @@ namespace UnityEditor.ILRuntime.Extensions
             EditorWindowFocusUtility.OnUnityEditorFocus -= _CompileAssemblies;
             EditorWindowFocusUtility.OnUnityEditorFocus += _CompileAssemblies;
             EnableSourceListening();
+            if (LastCompileHash != CalculateSourceCodeHash())
+            {
+                CompileProject();
+            }
+
         }
 
         static void DisableAutoCompile()
@@ -91,18 +173,21 @@ namespace UnityEditor.ILRuntime.Extensions
 
         static void EnableSourceListening()
         {
-            if (string.IsNullOrEmpty(EditorILRSettings.ProjectPath))
+            if (vsSolution == null)
                 return;
 
             if (fsws != null)
                 return;
             fsws = new List<FileSystemWatcher>();
 
-            string fullDirPath = Path.GetFullPath(Path.GetDirectoryName(EditorILRSettings.ProjectPath));
-            var fsw = new FileSystemWatcher(fullDirPath, "*.cs");
-            fsw.EnableRaisingEvents = true;
-            fsw.Changed += Fsw_Changed;
-            fsws.Add(fsw);
+            foreach (var proj in vsSolution.Projects)
+            {
+                string fullDir = proj.FullDir;
+                var fsw = new FileSystemWatcher(fullDir, "*.cs");
+                fsw.Changed += Fsw_Changed;
+                fsw.EnableRaisingEvents = true;
+                fsws.Add(fsw);
+            }
         }
 
         private static void Fsw_Changed(object sender, FileSystemEventArgs e)
@@ -139,6 +224,7 @@ namespace UnityEditor.ILRuntime.Extensions
                 {
                     sourceCodeChanged = false;
                 }
+                LastCompileHash = CalculateSourceCodeHash();
 
                 string fullProjPath = Path.GetFullPath(EditorILRSettings.ProjectPath);
                 using (Process proc = new Process())
@@ -166,6 +252,7 @@ namespace UnityEditor.ILRuntime.Extensions
                         throw new Exception($"Build project error. errorCode: {proc.ExitCode}\narguments: {proc.StartInfo.Arguments}\n{builder.ToString()}");
                     }
                 }
+
             }
             catch (Exception ex)
             {
@@ -278,5 +365,200 @@ namespace UnityEditor.ILRuntime.Extensions
                 }
             }
         }
+
+        internal class VSSolution
+        {
+            Regex keyRegex = new Regex("^\\s*(?<key>.+?)(\\((\"(?<key_param>.+?)\"|(?<key_param>.+?))\\))?(\\s=\\s(?<value>.+))?$", RegexOptions.Multiline);
+            Regex multiValueRegex = new Regex(",?\\s*\"(?<value>[^\"]+)\"");
+
+            public VSSolution(string path)
+            {
+                this.Path = path;
+            }
+
+
+            public string Path { get; set; }
+
+            public string FullPath { get => System.IO.Path.GetFullPath(Path); }
+
+            public string FullDir { get => System.IO.Path.GetDirectoryName(FullPath); }
+
+            public List<VSProject> Projects { get; set; } = new List<VSProject>();
+
+            public void Load()
+            {
+                string content = File.ReadAllText(Path);
+
+                foreach (Match m in keyRegex.Matches(content))
+                {
+                    string key = m.Groups["key"].Value;
+                    string keyParam = m.Groups["key_param"].Value;
+                    string value = m.Groups["value"].Value;
+                    switch (key)
+                    {
+                        case "Project":
+                            {
+                                int index = 0;
+                                string name = null, projPath = null, guid = null;
+                                foreach (Match mv in multiValueRegex.Matches(value))
+                                {
+                                    string v = mv.Groups["value"].Value;
+                                    switch (index++)
+                                    {
+                                        case 0:
+                                            name = v;
+                                            break;
+                                        case 1:
+                                            projPath = v;
+                                            break;
+                                        case 2:
+                                            guid = v;
+                                            break;
+                                    }
+                                }
+                                var proj = AddProject();
+                                proj.Guid = guid;
+                                proj.Name = name;
+                                proj.Path = projPath;
+                                proj.Load();
+                            }
+                            break;
+                    }
+
+                }
+            }
+
+            public VSProject AddProject()
+            {
+                var proj = new VSProject();
+                proj.Solution = this;
+                Projects.Add(proj);
+                return proj;
+            }
+
+            public void RemoveProject(string guid)
+            {
+                var proj = GetProject(guid);
+                if (proj != null)
+                {
+                    proj.Solution = null;
+                    Projects.Remove(proj);
+                }
+            }
+
+            public VSProject GetProject(string guid)
+            {
+                VSProject proj = default;
+                foreach (var item in Projects)
+                {
+                    if (item.Guid == guid)
+                    {
+                        proj = item;
+                        break;
+                    }
+                }
+                return proj;
+            }
+
+        }
+
+
+        internal class VSProject
+        {
+            internal VSProject()
+            {
+            }
+            internal VSProject(string guid)
+            {
+                this.Guid = guid;
+            }
+
+            public string Guid { get; set; }
+            public string Name { get; set; }
+            public string Path { get; set; }
+
+            public VSSolution Solution { get; internal set; }
+
+            public string AssemblyName { get; set; }
+
+            public string RootNamespace { get; set; }
+
+            public string FullPath
+            {
+                get
+                {
+                    string path = this.Path;
+                    if (!System.IO.Path.IsPathRooted(path))
+                    {
+                        path = System.IO.Path.Combine(Solution.FullDir, path);
+                    }
+                    return System.IO.Path.GetFullPath(path);
+                }
+            }
+
+            public string FullDir
+            {
+                get
+                {
+                    string dir = System.IO.Path.GetDirectoryName(FullPath);
+                    return dir;
+                }
+            }
+
+            public void Load()
+            {
+                if (!File.Exists(FullPath))
+                {
+                    return;
+                }
+
+                XmlDocument doc = new XmlDocument();
+                doc.Load(FullPath);
+
+                XmlNamespaceManager nsmgr = new XmlNamespaceManager(doc.NameTable);
+                nsmgr.AddNamespace("vs", "http://schemas.microsoft.com/developer/msbuild/2003");
+
+
+                var projNode = doc.DocumentElement;
+
+                XmlNode defaultPropGroup = null;
+                foreach (XmlNode node in projNode.SelectNodes("vs:PropertyGroup", nsmgr))
+                {
+                    if (node.Attributes["Condition"] == null)
+                    {
+                        defaultPropGroup = node;
+                        break;
+                    }
+                }
+
+                if (defaultPropGroup == null)
+                {
+                    defaultPropGroup = projNode.SelectSingleNode("vs:PropertyGroup", nsmgr);
+                }
+
+                foreach (XmlNode child in defaultPropGroup.ChildNodes)
+                {
+                    if (child.NodeType == XmlNodeType.Element)
+                    {
+                        string value = child.InnerText;
+                        switch (child.LocalName)
+                        {
+                            case "ProjectGuid":
+                                Guid = value;
+                                break;
+                            case "AssemblyName":
+                                AssemblyName = value;
+                                break;
+                            case "RootNamespace":
+                                RootNamespace = value;
+                                break;
+                        }
+                    }
+                }
+
+            }
+
+        }
+
     }
 }

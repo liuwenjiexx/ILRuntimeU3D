@@ -14,17 +14,18 @@ namespace UnityEngine.ILRuntime.Extensions
     {
 
         AppDomain appDomain;
-        List<IDisposable> disposables;
+        protected List<IDisposable> disposeObjs = new List<IDisposable>();
+
 
         public AppDomain AppDomain { get => appDomain; }
 
         // Start is called before the first frame update
         protected virtual void Start()
         {
-            StartCoroutine(LoadILRAssembly());
+            StartCoroutine(Initalize());
         }
 
-        string GetUrl(string url)
+        protected string GetUrl(string url)
         {
 
             if (url.IndexOf("://") < 0)
@@ -34,31 +35,36 @@ namespace UnityEngine.ILRuntime.Extensions
 
 
 
-        IEnumerator LoadILRAssembly()
+        protected virtual IEnumerator Initalize()
         {
             appDomain = new AppDomain();
 
             byte[] dllBytes = null, pdbBytes = null;
 
-            string assemblyName;
-            disposables = new List<IDisposable>();
-
-            foreach (var assembliyPath in ILRSettings.StreamingAssetsPath.Split('|'))
+            if (disposeObjs == null)
+                disposeObjs = new List<IDisposable>();
+            string streamingAssetsPath = Application.streamingAssetsPath;
+            if (!string.IsNullOrEmpty(ILRSettings.StreamingAssetsPath))
             {
-                assemblyName = Path.GetFileNameWithoutExtension(assembliyPath);
+                streamingAssetsPath += $"/{ILRSettings.StreamingAssetsPath}";
+            }
+            foreach (var assemblyName in ILRSettings.AssemblyName.Split('|'))
+            {
+                string url;
+
                 dllBytes = null;
                 pdbBytes = null;
-
-                using (var request = UnityWebRequest.Get(GetUrl(Application.streamingAssetsPath + $"/{assemblyName}.dll")))
+                url = GetUrl(streamingAssetsPath + $"/{assemblyName}.dll");
+                using (var request = UnityWebRequest.Get(url))
                 {
                     yield return request.SendWebRequest();
                     if (!string.IsNullOrEmpty(request.error))
-                        throw new System.Exception(request.error + "\n" + assembliyPath);
+                        throw new System.Exception(request.error + "\n" + url);
 
                     dllBytes = request.downloadHandler.data;
                 }
-
-                using (var request = UnityWebRequest.Get(GetUrl(Application.streamingAssetsPath + $"/{assemblyName}.pdb")))
+                url = GetUrl(streamingAssetsPath + $"/{assemblyName}.pdb");
+                using (var request = UnityWebRequest.Get(url))
                 {
                     yield return request.SendWebRequest();
                     if (!string.IsNullOrEmpty(request.error))
@@ -75,12 +81,12 @@ namespace UnityEngine.ILRuntime.Extensions
 
                 MemoryStream fs = null, p = null;
                 fs = new MemoryStream(dllBytes);
-                disposables.Add(fs);
+                disposeObjs.Add(fs);
 
                 if (pdbBytes != null)
                 {
                     p = new MemoryStream(pdbBytes);
-                    disposables.Add(p);
+                    disposeObjs.Add(p);
                 }
 
                 try
@@ -116,7 +122,7 @@ namespace UnityEngine.ILRuntime.Extensions
 
         }
 
-        private void OnDestroy()
+        protected virtual void OnDestroy()
         {
             if (appDomain != null)
             {
@@ -125,11 +131,11 @@ namespace UnityEngine.ILRuntime.Extensions
             }
             try
             {
-                foreach (var o in disposables)
+                foreach (var o in disposeObjs)
                 {
                     o.Dispose();
                 }
-                disposables.Clear();
+                disposeObjs.Clear();
             }
             catch { }
 

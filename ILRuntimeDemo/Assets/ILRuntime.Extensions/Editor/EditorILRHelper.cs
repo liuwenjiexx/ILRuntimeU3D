@@ -20,22 +20,22 @@ namespace UnityEditor.ILRuntime.Extensions
     {
         public const string MenuPrefix = "ILRuntime/";
 
-        public static AppDomain LoadAppDomain()
-        {
-            AppDomain domain = new AppDomain();
+        //public static AppDomain LoadAppDomain()
+        //{
+        //    AppDomain domain = new AppDomain();
 
-            if (Directory.Exists(EditorILRSettings.AssemblyPath))
-            {
-                foreach (var file in Directory.GetFiles(EditorILRSettings.AssemblyPath, "*.dll", SearchOption.AllDirectories))
-                {
-                    using (var fs = new FileStream(file, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                    {
-                        domain.LoadAssembly(fs);
-                    }
-                }
-            }
-            return domain;
-        }
+        //    if (Directory.Exists(EditorILRSettings.AssemblyPath))
+        //    {
+        //        foreach (var file in Directory.GetFiles(EditorILRSettings.AssemblyPath, "*.dll", SearchOption.AllDirectories))
+        //        {
+        //            using (var fs = new FileStream(file, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+        //            {
+        //                domain.LoadAssembly(fs);
+        //            }
+        //        }
+        //    }
+        //    return domain;
+        //}
 
 
 
@@ -43,7 +43,7 @@ namespace UnityEditor.ILRuntime.Extensions
         public static void GenerateCode()
         {
 
-            string outputPath = EditorILRSettings.GeneratedCodePath;
+            string outputPath = EditorILRSettings.GenerateCodePath;
             if (!Directory.Exists(outputPath))
                 Directory.CreateDirectory(outputPath);
 
@@ -73,18 +73,18 @@ namespace UnityEditor.ILRuntime.Extensions
         [MenuItem(MenuPrefix + "Clear Code")]
         public static void ClearCode()
         {
-            if (string.IsNullOrEmpty(EditorILRSettings.GeneratedCodePath))
+            if (string.IsNullOrEmpty(EditorILRSettings.GenerateCodePath))
                 return;
-            if (!Directory.Exists(EditorILRSettings.GeneratedCodePath))
+            if (!Directory.Exists(EditorILRSettings.GenerateCodePath))
                 return;
-            foreach (var file in Directory.GetFiles(EditorILRSettings.GeneratedCodePath, "*", SearchOption.AllDirectories))
+            foreach (var file in Directory.GetFiles(EditorILRSettings.GenerateCodePath, "*", SearchOption.AllDirectories))
             {
                 if (file.EndsWith(".meta"))
                     continue;
                 File.Delete(file);
             }
 
-            foreach (var dir in Directory.GetDirectories(EditorILRSettings.GeneratedCodePath))
+            foreach (var dir in Directory.GetDirectories(EditorILRSettings.GenerateCodePath))
             {
                 if (Directory.Exists(dir))
                 {

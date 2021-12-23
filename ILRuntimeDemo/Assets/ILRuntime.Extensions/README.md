@@ -1,6 +1,10 @@
 # ILRuntime 扩展
 
-该扩展功能仅支持 `ILRuntime` `com.ourpalm.ilruntime` 
+> 链接
+
+**ILRuntime**： [中文文档](https://ourpalm.github.io/ILRuntime/) [仓库](https://github.com/Ourpalm/ILRuntime) [Unity样例仓库](https://github.com/Ourpalm/ILRuntimeU3D)
+
+该扩展包仅支持 `ILRuntime(com.ourpalm.ilruntime)` 
 
 ## 配置
 
@@ -12,9 +16,28 @@
 
   VS 的安装目录，系统添加 `VisualStudio` 环境变量
 
-- Project Path
+- Project File
 
-  设置 `ILR` 工程路径
+  `ILRuntime` `.sln` 工程文件路径
+
+- Assembly Name
+
+  程序集名称，多个用 `|` 分隔，可以点击 `Refresh` 按钮读取工程文件获取
+
+- Generate Code Path
+
+  `Generate Code` 菜单生成的静态代码目录
+  
+- StreamingAssets Path
+
+  默认：`ILR`，程序集所在 `StreamingAssets` 目录的相对路径，`ILRSettings.StreamingAssetsPath` 获取
+
+  配置VS工程属性 `生成事件/生成后事件命令行`
+
+  ```bash
+  Copy /Y "$(TargetPath)" "$(SolutionDir)\..\..\..\..\StreamingAssets\ILR\$(TargetFileName)"
+  Copy /Y "$(TargetDir)\$(TargetName).pdb" "$(SolutionDir)\..\..\..\..\StreamingAssets\ILR\$(TargetName).pdb"
+  ```
 
 - Auto Compile Assemblies
 

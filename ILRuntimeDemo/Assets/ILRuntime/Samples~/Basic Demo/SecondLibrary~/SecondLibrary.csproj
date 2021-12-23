@@ -1,16 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F6F32EB1-2463-48D6-AFA6-BBDB9AB4B75A}</ProjectGuid>
+    <ProjectGuid>{5210EDAC-0ECA-4688-8E98-5DD14DFB02CB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>HotFix_Project</RootNamespace>
-    <AssemblyName>HotFix_Project</AssemblyName>
+    <RootNamespace>SecondLibrary</RootNamespace>
+    <AssemblyName>SecondLibrary</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -33,56 +34,30 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\..\Library\ScriptAssemblies\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="MyDll">
-      <HintPath>..\..\..\..\..\Library\ScriptAssemblies\MyDll.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>UnityDlls\UnityEngine.CoreModule.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>UnityDlls\UnityEngine.InputLegacyModule.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine.UIModule">
-      <HintPath>UnityDlls\UnityEngine.UIModule.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\HotFix_Project~\UnityDlls\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TestJson.cs" />
-    <Compile Include="TestPerformance.cs" />
-    <Compile Include="TestValueType.cs" />
-    <Compile Include="TestMonoBehaviour.cs" />
-    <Compile Include="TestCoroutine.cs" />
-    <Compile Include="TestCLRBinding.cs" />
-    <Compile Include="TestCLRRedirection.cs" />
-    <Compile Include="TestInheritance.cs" />
-    <Compile Include="TestDelegate.cs" />
-    <Compile Include="InstanceClass.cs" />
+    <Compile Include="Class1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HotFix_Project~\HotFix_Project.csproj">
+      <Project>{f6f32eb1-2463-48d6-afa6-bbdb9ab4b75a}</Project>
+      <Name>HotFix_Project</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>Copy /Y "$(TargetPath)" "$(SolutionDir)\..\..\..\..\StreamingAssets\ILR\$(TargetFileName)"
 Copy /Y "$(TargetDir)\$(TargetName).pdb" "$(SolutionDir)\..\..\..\..\StreamingAssets\ILR\$(TargetName).pdb"</PostBuildEvent>
   </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

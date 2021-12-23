@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HotFix_Project", "HotFix_Project.csproj", "{F6F32EB1-2463-48D6-AFA6-BBDB9AB4B75A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SecondLibrary", "..\SecondLibrary~\SecondLibrary.csproj", "{5210EDAC-0ECA-4688-8E98-5DD14DFB02CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,8 +17,15 @@ Global
 		{F6F32EB1-2463-48D6-AFA6-BBDB9AB4B75A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6F32EB1-2463-48D6-AFA6-BBDB9AB4B75A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6F32EB1-2463-48D6-AFA6-BBDB9AB4B75A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5210EDAC-0ECA-4688-8E98-5DD14DFB02CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5210EDAC-0ECA-4688-8E98-5DD14DFB02CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5210EDAC-0ECA-4688-8E98-5DD14DFB02CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5210EDAC-0ECA-4688-8E98-5DD14DFB02CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3FCF2476-55AB-46E8-BEBB-3730C57E40E3}
 	EndGlobalSection
 EndGlobal
