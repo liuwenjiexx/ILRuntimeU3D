@@ -6,6 +6,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.ILRuntime.Extensions;
+
 namespace UnityEngine.ILRuntime.Extensions.Example
 {
     public class InvokeILRExample : ILRuntimeLoader
@@ -18,7 +20,6 @@ namespace UnityEngine.ILRuntime.Extensions.Example
                 List<Type> list = new List<Type>();
                 list.Add(typeof(Action));
                 list.Add(typeof(Func<int, int, int>));
-                list.Add(typeof(RefOutMethodDelegate));
                 return list;
             }
         }
@@ -47,4 +48,6 @@ namespace UnityEngine.ILRuntime.Extensions.Example
 
     }
 }
+
+[CLRCallILR]
 public delegate void RefOutMethodDelegate(int addition, out List<int> lst, ref int val);
