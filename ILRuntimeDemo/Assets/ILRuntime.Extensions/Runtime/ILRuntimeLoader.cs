@@ -37,6 +37,13 @@ namespace UnityEngine.ILRuntime.Extensions
 
         protected virtual IEnumerator Initalize()
         {
+
+            if (string.IsNullOrEmpty(ILRSettings.AssemblyName))
+            {
+                Debug.LogError($"'{ILRSettings.ProjectSettingsPath}/Assembly Name' not set");
+                yield break;
+            }
+
             appDomain = new AppDomain();
 
             byte[] dllBytes = null, pdbBytes = null;

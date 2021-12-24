@@ -13,6 +13,8 @@ namespace UnityEngine.ILRuntime.Extensions
     public class ILRSettings
     {
 
+        internal const string ProjectSettingsPath = "Project Settings/Extensions/ILRuntime";
+
         #region Provider
 
 
@@ -36,7 +38,7 @@ namespace UnityEngine.ILRuntime.Extensions
         #endregion
 
         [SerializeField]
-        private string assemblyName = "HotFix_Project";
+        private string assemblyName;
 
         public static string AssemblyName
         {
@@ -47,7 +49,7 @@ namespace UnityEngine.ILRuntime.Extensions
 
 
         [SerializeField]
-        private string streamingAssetsPath="ILR";
+        private string streamingAssetsPath = "ILR";
 
         public static string StreamingAssetsPath
         {

@@ -22,7 +22,7 @@
 
 - Assembly Name
 
-  程序集名称，多个用 `|` 分隔，可以点击 `Refresh` 按钮读取工程文件获取
+  程序集名称，多个用 `|` 分隔，点击 `Refresh` 按钮读取工程文件获取程序集名称
 
 - Generate Code Path
 
@@ -30,7 +30,7 @@
   
 - StreamingAssets Path
 
-  默认：`ILR`，程序集所在 `StreamingAssets` 目录的相对路径，`ILRSettings.StreamingAssetsPath` 获取
+  默认：`ILR`，`ILR` 程序集相对 `StreamingAssets` 目录的路径，`ILRSettings.StreamingAssetsPath` 获取
 
   配置VS工程属性 `生成事件/生成后事件命令行`
 
@@ -47,11 +47,17 @@
 
 ![Menu](Doc~/Images/Menu.png)
 
-- Compile ILR Assemblies
+- Generate Code
+
+  生成跨域调用的代码
+
+- Clear Generated Code
+
+  删除生成的代码
+
+- Compile ILR Assembly
 
   编译 `ILR` 工程，需要配置工程路径
-
-  
 
 ## 打开 ILR 工程
 

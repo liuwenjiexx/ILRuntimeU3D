@@ -70,11 +70,14 @@ namespace UnityEditor.ILRuntime.Extensions
             AssetDatabase.Refresh();
         }
 
-        [MenuItem(MenuPrefix + "Clear Code")]
+        [MenuItem(MenuPrefix + "Clear Generated Code")]
         public static void ClearCode()
         {
             if (string.IsNullOrEmpty(EditorILRSettings.GenerateCodePath))
+            {
+                Debug.LogError($"'{ILRSettings.ProjectSettingsPath}/Generate Code Path' not set");
                 return;
+            }
             if (!Directory.Exists(EditorILRSettings.GenerateCodePath))
                 return;
             foreach (var file in Directory.GetFiles(EditorILRSettings.GenerateCodePath, "*", SearchOption.AllDirectories))
@@ -248,7 +251,7 @@ namespace UnityEditor.ILRuntime.Extensions
 
                             bool hasRefOut = false;
 
-                            foreach(var arg in method.GetParameters())
+                            foreach (var arg in method.GetParameters())
                             {
                                 if (arg.ParameterType.IsByRef)
                                 {

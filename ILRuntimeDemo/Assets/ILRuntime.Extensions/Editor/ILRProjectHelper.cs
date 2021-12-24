@@ -211,12 +211,12 @@ namespace UnityEditor.ILRuntime.Extensions
         }
 
 
-        [MenuItem("ILRuntime/Compile ILR Assemblies")]
+        [MenuItem(EditorILRHelper.MenuPrefix + "Compile ILR Assembly")]
         public static void CompileProject()
         {
 
-            int processId = Progress.Start("Compile ILR Assemblies");
-            EditorUtility.DisplayProgressBar("Compile ILR Assemblies", "Compiling", 0f);
+            int processId = Progress.Start("Compile ILR Assembly");
+            EditorUtility.DisplayProgressBar("Compile ILR Assembly", "Compiling", 0f);
             try
             {
                 StringBuilder builder = new StringBuilder();
