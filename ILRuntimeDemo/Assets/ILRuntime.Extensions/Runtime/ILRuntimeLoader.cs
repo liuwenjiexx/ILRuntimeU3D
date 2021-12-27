@@ -50,42 +50,35 @@ namespace UnityEngine.ILRuntime.Extensions
 
             if (disposeObjs == null)
                 disposeObjs = new List<IDisposable>();
-            string streamingAssetsPath = Application.streamingAssetsPath;
-            if (!string.IsNullOrEmpty(ILRSettings.StreamingAssetsPath))
-            {
-                streamingAssetsPath += $"/{ILRSettings.StreamingAssetsPath}";
-            }
+
             foreach (var assemblyName in ILRSettings.AssemblyName.Split('|'))
             {
                 string url;
+                bool isDone;
+                string fileName;
 
                 dllBytes = null;
                 pdbBytes = null;
-                url = GetUrl(streamingAssetsPath + $"/{assemblyName}.dll");
-                using (var request = UnityWebRequest.Get(url))
+                fileName = assemblyName + ".dll";
+                isDone = false;
+                LoadAsset(fileName, (bytes) =>
                 {
-                    yield return request.SendWebRequest();
-                    if (!string.IsNullOrEmpty(request.error))
-                        throw new System.Exception(request.error + "\n" + url);
+                    isDone = true;
+                    if (bytes == null)
+                        throw new Exception("Load dll fail. " + fileName);
+                    dllBytes = bytes;
+                });
+                yield return new WaitUntil(() => isDone);
 
-                    dllBytes = request.downloadHandler.data;
-                }
-                url = GetUrl(streamingAssetsPath + $"/{assemblyName}.pdb");
-                using (var request = UnityWebRequest.Get(url))
+                fileName = assemblyName + ".pdb";
+                isDone = false;
+                LoadAsset(fileName, (bytes) =>
                 {
-                    yield return request.SendWebRequest();
-                    if (!string.IsNullOrEmpty(request.error))
-                    {
-#if UNITY_EDITOR
-                        Debug.LogError(request.error);
-#endif
-                    }
-                    else
-                    {
-                        pdbBytes = request.downloadHandler.data;
-                    }
-                }
-
+                    isDone = true;
+                    pdbBytes = bytes;
+                });
+                yield return new WaitUntil(() => isDone);
+                 
                 MemoryStream fs = null, p = null;
                 fs = new MemoryStream(dllBytes);
                 disposeObjs.Add(fs);
@@ -115,6 +108,37 @@ namespace UnityEngine.ILRuntime.Extensions
 
             OnILRLoaded();
         }
+
+        protected virtual void LoadAsset(string fileName, Action<byte[]> result)
+        {
+            string streamingAssetsPath = Application.streamingAssetsPath;
+            if (!string.IsNullOrEmpty(ILRSettings.StreamingAssetsPath))
+            {
+                streamingAssetsPath += $"/{ILRSettings.StreamingAssetsPath}";
+            }
+            string url;
+            url = GetUrl(streamingAssetsPath + $"/{fileName}");
+            StartCoroutine(_LoadAsset(url, fileName, result));
+        }
+
+        private IEnumerator _LoadAsset(string url, string fileName, Action<byte[]> result)
+        {
+            using (var request = UnityWebRequest.Get(url))
+            {
+                yield return request.SendWebRequest();
+
+                if (!string.IsNullOrEmpty(request.error))
+                {
+                    Debug.LogWarning(request.error + "\n" + url);
+                }
+                else
+                {
+                    byte[] bytes = request.downloadHandler.data;
+                    result(bytes);
+                }
+            }
+        }
+
         protected virtual void OnILRInitialize()
         {
 #if DEBUG && (UNITY_EDITOR || UNITY_ANDROID || UNITY_IPHONE)
