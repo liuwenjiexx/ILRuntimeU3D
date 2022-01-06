@@ -13,6 +13,7 @@ using UnityEngine;
 using UnityEngine.ILRuntime.Extensions;
 using UnityEngine.Internal;
 using AppDomain = ILRuntime.Runtime.Enviorment.AppDomain;
+using System.Linq.Expressions;
 
 namespace UnityEditor.ILRuntime.Extensions
 {
@@ -194,6 +195,59 @@ namespace UnityEditor.ILRuntime.Extensions
                 namespaces.Add(type.Namespace);
             }
 
+            HashSet<Type> types = new HashSet<Type>();
+            foreach (var type in delegateTypes)
+            {
+                types.Add(type);
+
+                if (type.IsGenericType)
+                {
+                    if (type.FullName.StartsWith("System.Func`"))
+                    {
+                        continue;
+                    }
+                    else if (type.FullName.StartsWith("System.Action`"))
+                    {
+                        continue;
+                    }
+                }
+
+                var method = type.GetMethod("Invoke");
+                Type[] argTypes = method.GetParameters().Select(o => o.ParameterType).ToArray();
+                bool hasRefOut = false;
+
+                foreach (var arg in method.GetParameters())
+                {
+                    if (arg.ParameterType.IsByRef)
+                    {
+                        hasRefOut = true;
+                    }
+                }
+
+                if (hasRefOut)
+                    continue;
+                Type funcType = null;
+
+                try
+                {
+                    if (method.ReturnType == typeof(void))
+                    {
+                        funcType = Expression.GetActionType(argTypes);
+                    }
+                    else
+                    {
+                        funcType = Expression.GetFuncType(argTypes);
+                    }
+                }
+                catch { }
+
+                if (funcType != null)
+                {
+                    types.Add(funcType);
+                }
+
+            }
+
             writter.WriteLine("namespace ILRuntime.Runtime.Generated")
                 .WriteLine("{");
             using (writter.BeginIndent())
@@ -221,24 +275,29 @@ namespace UnityEditor.ILRuntime.Extensions
 
                     using (writter.BeginIndent())
                     {
-                        foreach (var type in delegateTypes)
+                        foreach (var type in types)
                         {
                             if (type.IsGenericType)
                             {
                                 string fullName = type.FullName;
+                                bool? isFunc = null;
                                 if (fullName.StartsWith("System.Func`"))
                                 {
+                                    isFunc = true;
                                     writter.Write("appDomain.DelegateManager.RegisterFunctionDelegate<");
                                 }
                                 else if (fullName.StartsWith("System.Action`"))
                                 {
+                                    isFunc = false;
                                     writter.Write("appDomain.DelegateManager.RegisterMethodDelegate<");
                                 }
-
-                                Type[] argTypes1 = type.GetGenericArguments();
-                                writter.WriteTypeName(argTypes1).Write(">();")
-                                    .WriteLine();
-                                continue;
+                                if (isFunc.HasValue)
+                                {
+                                    Type[] argTypes1 = type.GetGenericArguments();
+                                    writter.WriteTypeName(argTypes1).Write(">();")
+                                        .WriteLine();
+                                    continue;
+                                }
                             }
 
                             if (type == typeof(Action))

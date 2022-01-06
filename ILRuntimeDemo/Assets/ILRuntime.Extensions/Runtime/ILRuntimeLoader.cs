@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using UnityEngine.ILRuntime.Extensions;
 using UnityEngine.Networking;
 using System;
 using AppDomain = ILRuntime.Runtime.Enviorment.AppDomain;
@@ -70,15 +69,18 @@ namespace UnityEngine.ILRuntime.Extensions
                 });
                 yield return new WaitUntil(() => isDone);
 
-                fileName = assemblyName + ".pdb";
-                isDone = false;
-                LoadAsset(fileName, (bytes) =>
+                if (HasPDB(assemblyName))
                 {
-                    isDone = true;
-                    pdbBytes = bytes;
-                });
-                yield return new WaitUntil(() => isDone);
-                 
+                    fileName = assemblyName + ".pdb";
+                    isDone = false;
+                    LoadAsset(fileName, (bytes) =>
+                    {
+                        isDone = true;
+                        pdbBytes = bytes;
+                    });
+                    yield return new WaitUntil(() => isDone);
+                }
+
                 MemoryStream fs = null, p = null;
                 fs = new MemoryStream(dllBytes);
                 disposeObjs.Add(fs);
@@ -91,7 +93,7 @@ namespace UnityEngine.ILRuntime.Extensions
 
                 try
                 {
-                    appDomain.LoadAssembly(fs, p, new global::ILRuntime.Mono.Cecil.Pdb.PdbReaderProvider());
+                           appDomain.LoadAssembly(fs, p, new global::ILRuntime.Mono.Cecil.Pdb.PdbReaderProvider());
                 }
                 catch
                 {
@@ -108,7 +110,10 @@ namespace UnityEngine.ILRuntime.Extensions
 
             OnILRLoaded();
         }
-
+        protected virtual bool HasPDB(string assemblyName)
+        {
+            return true;
+        }
         protected virtual void LoadAsset(string fileName, Action<byte[]> result)
         {
             string streamingAssetsPath = Application.streamingAssetsPath;
@@ -172,4 +177,5 @@ namespace UnityEngine.ILRuntime.Extensions
 
         }
     }
+
 }

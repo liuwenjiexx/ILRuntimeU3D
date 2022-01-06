@@ -110,13 +110,14 @@ namespace UnityEditor.ILRuntime.Extensions
             }
 
             Write("global::");
-            if (!string.IsNullOrEmpty(type.Namespace))
-            {
-                Write(type.Namespace).Write(".");
-            }
+            //if (!string.IsNullOrEmpty(type.Namespace))
+            //{
+            //    Write(type.Namespace).Write(".");
+            //}
+            Write(GetFullNameWithoutGenericArgument(type));
             if (type.IsGenericType)
             {
-                Write(type.Name.Split('`')[0]);
+                //Write(type.Name.Split('`')[0]);
 
                 Write("<");
                 bool first = true;
@@ -135,12 +136,23 @@ namespace UnityEditor.ILRuntime.Extensions
                 }
                 Write(">");
             }
-            else
-            {
-                Write(type.Name);
-            }
+            //else
+            //{
+            //    Write(type.Name);
+            //}
 
             return this;
+        }
+        string GetFullNameWithoutGenericArgument(Type type)
+        {
+            var fullName = type.FullName;
+            if (type.IsGenericType)
+            {
+                int index = fullName.IndexOf('`');
+                fullName = fullName.Substring(0, index);
+            }
+            fullName = fullName.Replace('+', '.');
+            return fullName;
         }
 
         public CodeWritter WriteTypeName(IEnumerable<Type> types)
