@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using AppDomain = ILRuntime.Runtime.Enviorment.AppDomain;
+using ILRuntime.Mono.Cecil.Cil;
 
 namespace UnityEngine.ILRuntime.Extensions
 {
@@ -17,6 +18,12 @@ namespace UnityEngine.ILRuntime.Extensions
 
 
         public AppDomain AppDomain { get => appDomain; }
+
+        public event Action<string> AssemblyLoaded;
+        public bool Initalized { get; private set; }
+
+        public delegate void ILRuntimeLoadAssemblyCallback(Stream assemblyReader, Stream symbolReader, bool pdb);
+
 
         // Start is called before the first frame update
         protected virtual void Start()
@@ -33,7 +40,6 @@ namespace UnityEngine.ILRuntime.Extensions
         }
 
 
-
         protected virtual IEnumerator Initalize()
         {
 
@@ -45,76 +51,95 @@ namespace UnityEngine.ILRuntime.Extensions
 
             appDomain = new AppDomain();
 
-            byte[] dllBytes = null, pdbBytes = null;
-
             if (disposeObjs == null)
                 disposeObjs = new List<IDisposable>();
 
             foreach (var assemblyName in ILRSettings.AssemblyName.Split('|'))
             {
-                string url;
-                bool isDone;
-                string fileName;
-
-                dllBytes = null;
-                pdbBytes = null;
-                fileName = assemblyName + ".dll";
-                isDone = false;
-                LoadAsset(fileName, (bytes) =>
-                {
-                    isDone = true;
-                    if (bytes == null)
-                        throw new Exception("Load dll fail. " + fileName);
-                    dllBytes = bytes;
-                });
-                yield return new WaitUntil(() => isDone);
-
-                if (HasPDB(assemblyName))
-                {
-                    fileName = assemblyName + ".pdb";
-                    isDone = false;
-                    LoadAsset(fileName, (bytes) =>
-                    {
-                        isDone = true;
-                        pdbBytes = bytes;
-                    });
-                    yield return new WaitUntil(() => isDone);
-                }
-
-                MemoryStream fs = null, p = null;
-                fs = new MemoryStream(dllBytes);
-                disposeObjs.Add(fs);
-
-                if (pdbBytes != null)
-                {
-                    p = new MemoryStream(pdbBytes);
-                    disposeObjs.Add(p);
-                }
-
-                try
-                {
-                           appDomain.LoadAssembly(fs, p, new global::ILRuntime.Mono.Cecil.Pdb.PdbReaderProvider());
-                }
-                catch
-                {
-                    Debug.LogError("加载热更DLL失败");
-                }
-
+                yield return StartCoroutine(_LoadAssembly(assemblyName));
             }
 
-
-            OnILRInitialize();
+            OnILRInitialize(appDomain);
 
             appDomain.DebugService.StartDebugService(56000);
 
+            OnILRLoaded(appDomain);
+            
+            Initalized = true;
 
-            OnILRLoaded();
         }
-        protected virtual bool HasPDB(string assemblyName)
+
+        public void LoadAssembly(string assemblyName)
         {
-            return true;
+            StartCoroutine(_LoadAssembly(assemblyName));
         }
-        protected virtual void LoadAsset(string fileName, Action<byte[]> result)
+
+        private IEnumerator _LoadAssembly(string assemblyName)
+        {
+            Stream assemblyReader = null, symbolReader = null;
+
+            bool isDone;
+            bool isPdb;
+            assemblyReader = null;
+            symbolReader = null;
+            isPdb = true;
+            isDone = false;
+
+            LoadAssembly(assemblyName, (_assemblyReader, _symbolReader, _pdb) =>
+            {
+                isDone = true;
+                assemblyReader = _assemblyReader;
+                symbolReader = _symbolReader;
+                isPdb = _pdb;
+            });
+
+            yield return new WaitUntil(() => isDone);
+
+            if (assemblyReader == null)
+            {
+                if (symbolReader != null)
+                    symbolReader.Dispose();            
+                throw new Exception("ILR assembly load fail. " + assemblyName);
+            }
+
+            try
+            {
+                disposeObjs.Add(assemblyReader);
+
+                ISymbolReaderProvider symbolReaderProvider = null;
+
+                if (symbolReader != null)
+                {
+                    disposeObjs.Add(symbolReader);
+
+                    if (isPdb)
+                    {
+                        symbolReaderProvider = new global::ILRuntime.Mono.Cecil.Pdb.PdbReaderProvider();
+                    }
+                    else
+                    {
+                        symbolReaderProvider = new global::ILRuntime.Mono.Cecil.Mdb.MdbReaderProvider();
+                    }
+                }
+
+                appDomain.LoadAssembly(assemblyReader, symbolReader, symbolReaderProvider);
+
+                AssemblyLoaded?.Invoke(assemblyName);
+            }
+            catch
+            {
+                Debug.LogError("加载热更DLL失败");
+            }
+
+        }
+
+
+        protected virtual void LoadAssembly(string assemblyName, ILRuntimeLoadAssemblyCallback result)
+        {
+            StartCoroutine(_LoadAssembly(assemblyName, result));
+        }
+
+        private IEnumerator _LoadAssembly(string assemblyName, ILRuntimeLoadAssemblyCallback result)
         {
             string streamingAssetsPath = Application.streamingAssetsPath;
             if (!string.IsNullOrEmpty(ILRSettings.StreamingAssetsPath))
@@ -122,29 +147,38 @@ namespace UnityEngine.ILRuntime.Extensions
                 streamingAssetsPath += $"/{ILRSettings.StreamingAssetsPath}";
             }
             string url;
-            url = GetUrl(streamingAssetsPath + $"/{fileName}");
-            StartCoroutine(_LoadAsset(url, fileName, result));
-        }
-
-        private IEnumerator _LoadAsset(string url, string fileName, Action<byte[]> result)
-        {
+            url = GetUrl(streamingAssetsPath + $"/{assemblyName}.dll");
+            Stream assemblyReader = null, symbolReader = null;
             using (var request = UnityWebRequest.Get(url))
             {
                 yield return request.SendWebRequest();
 
                 if (!string.IsNullOrEmpty(request.error))
                 {
-                    Debug.LogWarning(request.error + "\n" + url);
+                    throw new Exception(request.error + "\n" + url);
                 }
-                else
+
+                byte[] bytes = request.downloadHandler.data;
+                assemblyReader = new MemoryStream(bytes);
+
+            }
+
+            url = GetUrl(streamingAssetsPath + $"/{assemblyName}.pdb");
+            using (var request = UnityWebRequest.Get(url))
+            {
+                yield return request.SendWebRequest();
+
+                if (string.IsNullOrEmpty(request.error))
                 {
                     byte[] bytes = request.downloadHandler.data;
-                    result(bytes);
+                    symbolReader = new MemoryStream(bytes);
                 }
             }
+
+            result(assemblyReader, symbolReader, true);
         }
 
-        protected virtual void OnILRInitialize()
+        protected virtual void OnILRInitialize(AppDomain appDomain)
         {
 #if DEBUG && (UNITY_EDITOR || UNITY_ANDROID || UNITY_IPHONE)
             appDomain.UnityMainThreadID = System.Threading.Thread.CurrentThread.ManagedThreadId;
@@ -153,7 +187,7 @@ namespace UnityEngine.ILRuntime.Extensions
             appDomain.InitalizeExtensions();
         }
 
-        protected virtual void OnILRLoaded()
+        protected virtual void OnILRLoaded(AppDomain appDomain)
         {
 
         }

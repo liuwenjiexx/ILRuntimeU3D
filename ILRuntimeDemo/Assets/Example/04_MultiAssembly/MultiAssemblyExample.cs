@@ -8,10 +8,10 @@ namespace UnityEngine.ILRuntime.Extensions.Example
     public class MultiAssemblyExample : ILRuntimeLoader
     {
 
-        protected override void OnILRLoaded()
+        protected override void OnILRLoaded(global::ILRuntime.Runtime.Enviorment.AppDomain appDomain)
         {
-            AppDomain.Invoke("SecondLibrary.MyClass", "Hello", null, null);
-            AppDomain.Invoke("SecondLibrary.MyClass", "CallOtherAssembly", null, null);
+            appDomain.Invoke("SecondLibrary.MyClass", "Hello", null, null);
+            appDomain.Invoke("SecondLibrary.MyClass", "CallOtherAssembly", null, null);
         }
     }
 }

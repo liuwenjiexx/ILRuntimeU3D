@@ -28,10 +28,10 @@ namespace UnityEngine.ILRuntime.Extensions.Example
         }
 
 
-        protected override void OnILRLoaded()
+        protected override void OnILRLoaded(global::ILRuntime.Runtime.Enviorment.AppDomain appDomain)
         {
-            AppDomain.Invoke("HotFix_Project.TestDelegate", "Initialize2", null, null);
-            AppDomain.Invoke("HotFix_Project.TestDelegate", "RunTest2", null, null);
+            appDomain.Invoke("HotFix_Project.TestDelegate", "Initialize2", null, null);
+            appDomain.Invoke("HotFix_Project.TestDelegate", "RunTest2", null, null);
 
             DelegateDemo.TestMethodDelegate(789);
             var str = DelegateDemo.TestFunctionDelegate(098);

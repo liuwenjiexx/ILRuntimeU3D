@@ -657,6 +657,11 @@ namespace UnityEditor.ILRuntime.Extensions
         }
 
 
+        [MenuItem(MenuPrefix + "Settings", priority = 10)]
+        public static void OpenSettings()
+        {
+            SettingsService.OpenProjectSettings("Extensions/ILRuntime");
+        }
 
 
 

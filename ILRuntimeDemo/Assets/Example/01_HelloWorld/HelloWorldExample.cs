@@ -8,9 +8,9 @@ namespace UnityEngine.ILRuntime.Extensions.Example
     public class HelloWorldExample : ILRuntimeLoader
     {
 
-        protected override void OnILRLoaded()
+        protected override void OnILRLoaded(global::ILRuntime.Runtime.Enviorment.AppDomain appDomain)
         {
-            AppDomain.Invoke("HotFix_Project.InstanceClass", "StaticFunTest", null, null);
+            appDomain.Invoke("HotFix_Project.InstanceClass", "StaticFunTest", null, null);
         }
     }
 

@@ -23,7 +23,7 @@ namespace UnityEngine.ILRuntime.Extensions.Example
                 return list;
             }
         }
-        protected override void OnILRLoaded()
+        protected override void OnILRLoaded(global::ILRuntime.Runtime.Enviorment.AppDomain appDomain)
         {
             IType type = AppDomain.GetType("HotFix_Project.InstanceClass");
             IMethod method;
