@@ -23,7 +23,7 @@
                     <ui:TextField picking-mode="Ignore" name="gen_path" label="Generate Code Path" style="flex-shrink: 1; flex-basis: 100%;" />
                     <ui:Button text="..." display-tooltip-when-elided="true" name="btn_open_file" class="button_open_file" />
                 </ui:VisualElement>
-                <ui:VisualElement name="setting_item">
+                <ui:VisualElement name="setting_item" style="display: none;">
                     <ui:TextField picking-mode="Ignore" name="streamingassets_path" label="StreamingAssets Path" style="flex-shrink: 0; flex-basis: 100%; flex-wrap: nowrap; flex-grow: 0; overflow: hidden;" />
                 </ui:VisualElement>
                 <ui:VisualElement name="assembly_names" tooltip="&apos;|&apos; 分隔多个" label="Assembly Name">

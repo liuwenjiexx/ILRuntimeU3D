@@ -10,34 +10,39 @@ using ILRuntime.Mono.Cecil.Cil;
 
 namespace UnityEngine.ILRuntime.Extensions
 {
-    public class ILRuntimeLoader : MonoBehaviour
+    public abstract class ILRuntimeLoader : MonoBehaviour
     {
 
-        AppDomain appDomain;
+        private AppDomain appDomain;
         protected List<IDisposable> disposeObjs = new List<IDisposable>();
+        private static ILRuntimeLoader instance;
 
 
         public AppDomain AppDomain { get => appDomain; }
 
         public event Action<string> AssemblyLoaded;
+        public static event Action<AppDomain> AppDomainLoaded;
+
         public bool Initalized { get; private set; }
+
+        public static ILRuntimeLoader Instance { get => instance; set => instance = value; }
+
 
         public delegate void ILRuntimeLoadAssemblyCallback(Stream assemblyReader, Stream symbolReader, bool pdb);
 
+        protected virtual void Awake()
+        {
+            if (!instance)
+            {
+                instance = this;
+            }
+        }
 
-        // Start is called before the first frame update
         protected virtual void Start()
         {
             StartCoroutine(Initalize());
         }
 
-        protected string GetUrl(string url)
-        {
-
-            if (url.IndexOf("://") < 0)
-                url = "file:///" + url;
-            return url;
-        }
 
 
         protected virtual IEnumerator Initalize()
@@ -64,7 +69,8 @@ namespace UnityEngine.ILRuntime.Extensions
             appDomain.DebugService.StartDebugService(56000);
 
             OnILRLoaded(appDomain);
-            
+            AppDomainLoaded?.Invoke(appDomain);
+
             Initalized = true;
 
         }
@@ -98,7 +104,7 @@ namespace UnityEngine.ILRuntime.Extensions
             if (assemblyReader == null)
             {
                 if (symbolReader != null)
-                    symbolReader.Dispose();            
+                    symbolReader.Dispose();
                 throw new Exception("ILR assembly load fail. " + assemblyName);
             }
 
@@ -134,49 +140,8 @@ namespace UnityEngine.ILRuntime.Extensions
         }
 
 
-        protected virtual void LoadAssembly(string assemblyName, ILRuntimeLoadAssemblyCallback result)
-        {
-            StartCoroutine(_LoadAssembly(assemblyName, result));
-        }
+        protected abstract void LoadAssembly(string assemblyName, ILRuntimeLoadAssemblyCallback result);
 
-        private IEnumerator _LoadAssembly(string assemblyName, ILRuntimeLoadAssemblyCallback result)
-        {
-            string streamingAssetsPath = Application.streamingAssetsPath;
-            if (!string.IsNullOrEmpty(ILRSettings.StreamingAssetsPath))
-            {
-                streamingAssetsPath += $"/{ILRSettings.StreamingAssetsPath}";
-            }
-            string url;
-            url = GetUrl(streamingAssetsPath + $"/{assemblyName}.dll");
-            Stream assemblyReader = null, symbolReader = null;
-            using (var request = UnityWebRequest.Get(url))
-            {
-                yield return request.SendWebRequest();
-
-                if (!string.IsNullOrEmpty(request.error))
-                {
-                    throw new Exception(request.error + "\n" + url);
-                }
-
-                byte[] bytes = request.downloadHandler.data;
-                assemblyReader = new MemoryStream(bytes);
-
-            }
-
-            url = GetUrl(streamingAssetsPath + $"/{assemblyName}.pdb");
-            using (var request = UnityWebRequest.Get(url))
-            {
-                yield return request.SendWebRequest();
-
-                if (string.IsNullOrEmpty(request.error))
-                {
-                    byte[] bytes = request.downloadHandler.data;
-                    symbolReader = new MemoryStream(bytes);
-                }
-            }
-
-            result(assemblyReader, symbolReader, true);
-        }
 
         protected virtual void OnILRInitialize(AppDomain appDomain)
         {

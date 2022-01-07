@@ -48,14 +48,14 @@ namespace UnityEngine.ILRuntime.Extensions
 
 
 
-        [SerializeField]
-        private string streamingAssetsPath = "ILR";
+        //[SerializeField]
+        //private string streamingAssetsPath = "ILR";
 
-        public static string StreamingAssetsPath
-        {
-            get => Settings.streamingAssetsPath ?? string.Empty;
-            set => Provider.SetProperty(nameof(StreamingAssetsPath), ref Settings.streamingAssetsPath, value);
-        }
+        //public static string StreamingAssetsPath
+        //{
+        //    get => Settings.streamingAssetsPath ?? string.Empty;
+        //    set => Provider.SetProperty(nameof(StreamingAssetsPath), ref Settings.streamingAssetsPath, value);
+        //}
 
 
     }

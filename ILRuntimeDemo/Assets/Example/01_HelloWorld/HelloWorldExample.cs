@@ -5,10 +5,14 @@ using UnityEngine;
 namespace UnityEngine.ILRuntime.Extensions.Example
 {
 
-    public class HelloWorldExample : ILRuntimeLoader
+    public class HelloWorldExample : MonoBehaviour
     {
+        private void Start()
+        {
+            ILRuntimeLoader.AppDomainLoaded += OnILRLoaded;
+        }
 
-        protected override void OnILRLoaded(global::ILRuntime.Runtime.Enviorment.AppDomain appDomain)
+        private void OnILRLoaded(global::ILRuntime.Runtime.Enviorment.AppDomain appDomain)
         {
             appDomain.Invoke("HotFix_Project.InstanceClass", "StaticFunTest", null, null);
         }

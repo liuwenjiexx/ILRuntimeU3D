@@ -5,10 +5,14 @@ using UnityEngine;
 
 namespace UnityEngine.ILRuntime.Extensions.Example
 {
-    public class MultiAssemblyExample : ILRuntimeLoader
+    public class MultiAssemblyExample : MonoBehaviour
     {
+        private void Start()
+        {
+            ILRuntimeLoader.AppDomainLoaded += OnILRLoaded;
+        }
 
-        protected override void OnILRLoaded(global::ILRuntime.Runtime.Enviorment.AppDomain appDomain)
+        private void OnILRLoaded(global::ILRuntime.Runtime.Enviorment.AppDomain appDomain)
         {
             appDomain.Invoke("SecondLibrary.MyClass", "Hello", null, null);
             appDomain.Invoke("SecondLibrary.MyClass", "CallOtherAssembly", null, null);

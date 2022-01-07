@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace UnityEngine.ILRuntime.Extensions.Example
 {
-    public class DelegateExample : ILRuntimeLoader
+    public class DelegateExample : MonoBehaviour
     {
 
         /// <summary>
@@ -27,8 +27,12 @@ namespace UnityEngine.ILRuntime.Extensions.Example
             }
         }
 
+        private void Start()
+        {
+            ILRuntimeLoader.AppDomainLoaded += OnILRLoaded;
+        }
 
-        protected override void OnILRLoaded(global::ILRuntime.Runtime.Enviorment.AppDomain appDomain)
+        private void OnILRLoaded(global::ILRuntime.Runtime.Enviorment.AppDomain appDomain)
         {
             appDomain.Invoke("HotFix_Project.TestDelegate", "Initialize2", null, null);
             appDomain.Invoke("HotFix_Project.TestDelegate", "RunTest2", null, null);

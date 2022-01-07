@@ -158,12 +158,12 @@ namespace UnityEditor.ILRuntime.Extensions
             };
 
 
-            var txtStreamingAssetsPathField = settingsRoot.Q<TextField>("streamingassets_path");
-            txtStreamingAssetsPathField.value = ILRSettings.StreamingAssetsPath;
-            txtStreamingAssetsPathField.RegisterValueChangedCallback((e) =>
-            {
-                ILRSettings.StreamingAssetsPath = e.newValue;
-            });
+            //var txtStreamingAssetsPathField = settingsRoot.Q<TextField>("streamingassets_path");
+            //txtStreamingAssetsPathField.value = ILRSettings.StreamingAssetsPath;
+            //txtStreamingAssetsPathField.RegisterValueChangedCallback((e) =>
+            //{
+            //    ILRSettings.StreamingAssetsPath = e.newValue;
+            //});
 
 
 
