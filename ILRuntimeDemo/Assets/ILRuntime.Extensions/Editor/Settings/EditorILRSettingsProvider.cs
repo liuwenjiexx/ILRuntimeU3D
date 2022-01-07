@@ -9,6 +9,8 @@ using System.Reflection;
 using System.IO;
 using UnityEditor.Internal;
 using UnityEngine.ILRuntime.Extensions;
+using UnityEditor.UIElements;
+using UnityEngine.Bindings;
 
 namespace UnityEditor.ILRuntime.Extensions
 {
@@ -67,11 +69,7 @@ namespace UnityEditor.ILRuntime.Extensions
             }
 
             var txtProjPathField = settingsRoot.Q<TextField>("proj_path");
-            txtProjPathField.value = EditorILRSettings.ProjectPath;
-            txtProjPathField.RegisterValueChangedCallback((e) =>
-            {
-                EditorILRSettings.ProjectPath = e.newValue;
-            });
+            txtProjPathField.Bind<string>(EditorILRSettings.Settings, nameof(EditorILRSettings.ProjectPath));
 
             txtProjPathField.parent.Q<Button>("btn_open_file").clicked += () =>
             {
@@ -103,11 +101,7 @@ namespace UnityEditor.ILRuntime.Extensions
             };
 
             var txtGenPathField = settingsRoot.Q<TextField>("gen_path");
-            txtGenPathField.value = EditorILRSettings.GenerateCodePath;
-            txtGenPathField.RegisterValueChangedCallback((e) =>
-            {
-                EditorILRSettings.GenerateCodePath = e.newValue;
-            });
+            txtGenPathField.Bind<string>(EditorILRSettings.Settings, nameof(EditorILRSettings.GenerateCodePath));
 
             txtGenPathField.parent.Q<Button>("btn_open_file").clicked += () =>
             {
@@ -133,11 +127,7 @@ namespace UnityEditor.ILRuntime.Extensions
 
 
             var txtAssemblyNameField = settingsRoot.Q<TextField>("assembly_name");
-            txtAssemblyNameField.value = ILRSettings.AssemblyName;
-            txtAssemblyNameField.RegisterValueChangedCallback((e) =>
-            {
-                ILRSettings.AssemblyName = e.newValue;
-            });
+            txtAssemblyNameField.Bind<string>(ILRSettings.Settings, nameof(ILRSettings.AssemblyName));
 
             txtAssemblyNameField.parent.Q<Button>("btn_refresh").clicked += () =>
             {
@@ -166,16 +156,10 @@ namespace UnityEditor.ILRuntime.Extensions
             //});
 
 
-
             var tglEnabled = settingsRoot.Q<Toggle>("auto_compile");
-            tglEnabled.value = EditorILRSettings.AutoBuild;
-            tglEnabled.RegisterValueChangedCallback((e) =>
-            {
-                EditorILRSettings.AutoBuild = e.newValue;
-            });
+            tglEnabled.Bind<bool>(EditorILRSettings.Settings, nameof(EditorILRSettings.AutoBuild));
 
         }
-
 
 
         void Save()
