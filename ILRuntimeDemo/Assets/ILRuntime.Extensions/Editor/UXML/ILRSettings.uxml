@@ -1,14 +1,17 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="/Assets/ILRuntime.Extensions/Editor/USS/ILRSettings.uss" />
     <ui:VisualElement>
         <ui:Label text="ILRuntime Extensions" name="title" class="title" />
         <ui:ScrollView name="scrollview" style="display: none;" />
         <ui:VisualElement name="root_content" style="margin-left: 5px; margin-right: 5px;">
             <ui:VisualElement name="settings_panel" class="panel">
-                <ui:VisualElement name="setting_item">
-                    <ui:Label text="Visual Studio" display-tooltip-when-elided="true" class="unity-base-field__label label" />
-                    <ui:Label text="Visual Studio" display-tooltip-when-elided="true" name="vs_home" />
+                <ui:VisualElement name="setting_item" style="flex-basis: auto; overflow: visible;">
+                    <ui:VisualElement class="unity-base-field" style="flex-direction: row; overflow: visible; -unity-text-align: middle-left; flex-shrink: 1;">
+                        <ui:Label display-tooltip-when-elided="true" text="IDE" class="unity-base-field__label label" style="-unity-text-align: upper-left;" />
+                        <ui:Label display-tooltip-when-elided="true" name="ide" style="overflow: hidden; -unity-text-align: upper-right; align-items: stretch; display: flex; flex-direction: row; flex-shrink: 2;" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="setting_item">
+                <ui:VisualElement name="setting_item" style="flex-direction: row;">
                     <ui:TextField picking-mode="Ignore" name="proj_path" label="Project File(sln)" tooltip="Visual Studio Solution(.sln) Path" style="flex-shrink: 1; flex-basis: 100%;" />
                     <ui:Button text="..." display-tooltip-when-elided="true" name="btn_open_file" class="button_open_file" />
                 </ui:VisualElement>
@@ -21,7 +24,7 @@
                     <ui:Button text="..." display-tooltip-when-elided="true" name="btn_open_file" class="button_open_file" />
                 </ui:VisualElement>
                 <ui:VisualElement name="setting_item">
-                    <ui:TextField picking-mode="Ignore" name="streamingassets_path" label="StreamingAssets Path" style="flex-shrink: 1; flex-basis: 100%;" />
+                    <ui:TextField picking-mode="Ignore" name="streamingassets_path" label="StreamingAssets Path" style="flex-shrink: 0; flex-basis: 100%; flex-wrap: nowrap; flex-grow: 0; overflow: hidden;" />
                 </ui:VisualElement>
                 <ui:VisualElement name="assembly_names" tooltip="&apos;|&apos; 分隔多个" label="Assembly Name">
                     <ui:Toggle label="Auto Compile Assemblies" name="auto_compile" class="value" />

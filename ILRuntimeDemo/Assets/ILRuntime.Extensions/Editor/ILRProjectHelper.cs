@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -309,17 +310,54 @@ namespace UnityEditor.ILRuntime.Extensions
                 return vsHomePath;
             }
         }
+
+        static string externalScriptEditorPath = null;
+
+        static string ExternalScriptEditorPath
+        {
+            get
+            {
+                if (externalScriptEditorPath == null)
+                {
+                    try
+                    {
+                        var GetExternalScriptEditorMethod = typeof(ScriptEditorUtility).GetMethod("GetExternalScriptEditor");
+                        if (GetExternalScriptEditorMethod != null)
+                        {
+                            externalScriptEditorPath = GetExternalScriptEditorMethod.Invoke(null, null) as string;
+                        }
+                    }
+                    catch { }
+                    if (externalScriptEditorPath == null)
+                        externalScriptEditorPath = string.Empty;
+                }
+                return externalScriptEditorPath;
+            }
+        }
+
+
         public static string VSDevenvPath
         {
             get
             {
                 if (vsDevenvPath == null)
                 {
-                    if (!string.IsNullOrEmpty(VSHomePath))
-                        vsDevenvPath = Path.Combine(VSHomePath, @"Common7\IDE\devenv.exe");
-                    else
+                    if (!string.IsNullOrEmpty(ExternalScriptEditorPath))
+                    {
+                        if (ExternalScriptEditorPath.EndsWith("devenv.exe"))
+                        {
+                            vsDevenvPath = ExternalScriptEditorPath;
+                        }
+                    }
+                    if (string.IsNullOrEmpty(vsDevenvPath))
+                    {
+                        if (!string.IsNullOrEmpty(VSHomePath))
+                            vsDevenvPath = Path.Combine(VSHomePath, @"Common7\IDE\devenv.exe");
+                    }
+                    if (vsDevenvPath == null)
+                    {
                         vsDevenvPath = string.Empty;
-
+                    }
                 }
                 return vsDevenvPath;
             }

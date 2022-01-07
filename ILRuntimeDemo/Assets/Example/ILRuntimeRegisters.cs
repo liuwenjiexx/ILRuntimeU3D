@@ -20,6 +20,16 @@ public class ILRuntimeRegisters
                 typeof(Func<int>),
                 typeof(Func<float>),
                 typeof(Func<string>),
+            };
+        }
+    }
+
+    [CLRCallILR]
+    public static Type[] UnityTypes
+    {
+        get
+        {
+            return new Type[] {
                 typeof(UnityAction),
                 typeof(UnityAction<int>),
                 typeof(UnityAction<float>),

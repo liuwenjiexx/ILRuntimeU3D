@@ -51,16 +51,19 @@ namespace UnityEditor.ILRuntime.Extensions
 
             var settingsRoot = rootElement.Q("settings_panel");
 
-            var lbl = settingsRoot.Q<Label>("vs_home");
-            if (string.IsNullOrEmpty(ILRProjectHelper.VSHomePath))
+            var lbl = settingsRoot.Q<Label>("ide");
+            if (!string.IsNullOrEmpty(ILRProjectHelper.VSDevenvPath))
             {
-                lbl.text = "Error: Require set 'VisualStudio' environment variable";
-                lbl.parent.Q<Label>(null, "label").AddToClassList("error");
+                lbl.text = $"{ILRProjectHelper.VSDevenvPath}";
+                lbl.parent.Q<Label>(null, "label").RemoveFromClassList("error");
             }
             else
             {
-                lbl.text = $"{ILRProjectHelper.VSHomePath}";
-                lbl.parent.Q<Label>(null, "label").RemoveFromClassList("error");
+                if (string.IsNullOrEmpty(ILRProjectHelper.VSHomePath))
+                {
+                    lbl.text = "Error: Require set 'VisualStudio' environment variable";
+                    lbl.parent.Q<Label>(null, "label").AddToClassList("error");
+                }
             }
 
             var txtProjPathField = settingsRoot.Q<TextField>("proj_path");
