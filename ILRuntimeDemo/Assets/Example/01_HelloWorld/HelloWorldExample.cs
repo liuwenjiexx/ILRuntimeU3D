@@ -16,6 +16,12 @@ namespace UnityEngine.ILRuntime.Extensions.Example
         {
             appDomain.Invoke("HotFix_Project.InstanceClass", "StaticFunTest", null, null);
         }
+
+        [ContextMenu("StaticFunTest2")]
+        private void Invoke_StaticFunTest2()
+        {
+            ILRuntimeLoader.Instance.AppDomain.Invoke("HotFix_Project.InstanceClass", "StaticFunTest2", null, new object[] { 123 });
+        }
     }
 
 }
