@@ -74,7 +74,7 @@ namespace UnityEditor.ILRuntime.Extensions
         {
             try
             {
-                return vsSolution != null && EditorILRSettings.AutoBuild && !string.IsNullOrEmpty(VSHomePath);
+                return vsSolution != null && EditorILRSettings.AutoBuild && !string.IsNullOrEmpty(VSDevenvPath);
             }
             catch
             {
@@ -220,40 +220,58 @@ namespace UnityEditor.ILRuntime.Extensions
             EditorUtility.DisplayProgressBar("Compile ILR Assembly", "Compiling", 0f);
             try
             {
-                StringBuilder builder = new StringBuilder();
+                StringBuilder log = new StringBuilder();
                 lock (lockObj)
                 {
                     sourceCodeChanged = false;
                 }
-                LastCompileHash = CalculateSourceCodeHash();
-
                 string fullProjPath = Path.GetFullPath(EditorILRSettings.ProjectPath);
                 using (Process proc = new Process())
                 {
+                    string projDir = Path.GetDirectoryName(fullProjPath);
+                    string logFile = Path.GetFullPath(Path.Combine(projDir, ".vs/build.log"));
+                    if (File.Exists(logFile))
+                    {
+                        File.Delete(logFile);
+                    }
+
                     proc.StartInfo = new ProcessStartInfo()
                     {
-                        WorkingDirectory = Path.GetDirectoryName(fullProjPath),
+                        WorkingDirectory = projDir,
                         FileName = VSDevenvPath,
-                        Arguments = $"\"{fullProjPath}\"  /Build {(EditorILRSettings.IsDebug ? "Debug" : "Release")}",
+                        Arguments = $"\"{fullProjPath}\"  /Build {(EditorILRSettings.IsDebug ? "Debug" : "Release")} /out \"{logFile}\"",
                         //FileName = MSBuildPath,
                         //Arguments = $"\"{fullProjPath}\"  /property:Configuration={(EditorILRSettings.IsDebug ? "Debug" : "Release")}",
                         RedirectStandardError = true,
+                        RedirectStandardOutput = true,
                         UseShellExecute = false,
                         CreateNoWindow = true,
                         WindowStyle = ProcessWindowStyle.Hidden,
                     };
                     proc.ErrorDataReceived += (sender, e) =>
                     {
-                        builder.AppendLine(e.Data);
+                        log.AppendLine(e.Data);
+                    };
+                    proc.OutputDataReceived += (sender, e) =>
+                    {
+                        log.AppendLine(e.Data);
                     };
                     proc.Start();
                     proc.WaitForExit();
-                    if (builder.Length > 0 || proc.ExitCode != 0)
+                    if (log.Length > 0 || proc.ExitCode != 0)
                     {
-                        throw new Exception($"Build project error. errorCode: {proc.ExitCode}\narguments: {proc.StartInfo.Arguments}\n{builder.ToString()}");
+                        if (File.Exists(logFile))
+                        {
+                            log.AppendLine()
+                                .AppendLine(File.ReadAllText(logFile));
+                        } 
+                        throw new Exception($"Build project error. errorCode: {proc.ExitCode}\narguments: {proc.StartInfo.Arguments}\n{log.ToString()}");
                     }
                 }
-
+                if (log.Length == 0)
+                {
+                    LastCompileHash = CalculateSourceCodeHash();
+                }
             }
             catch (Exception ex)
             {
@@ -302,7 +320,8 @@ namespace UnityEditor.ILRuntime.Extensions
             {
                 if (vsHomePath == null)
                 {
-                    string vsHome = Environment.GetEnvironmentVariable("VisualStudio");
+                    string vsHome;
+                    vsHome = Environment.GetEnvironmentVariable("VisualStudio");
                     if (string.IsNullOrEmpty(vsHome))
                         throw new Exception("Not found environment variable 'VisualStudio'");
                     vsHomePath = vsHome;
@@ -342,17 +361,22 @@ namespace UnityEditor.ILRuntime.Extensions
             {
                 if (vsDevenvPath == null)
                 {
-                    if (!string.IsNullOrEmpty(ExternalScriptEditorPath))
-                    {
-                        if (ExternalScriptEditorPath.EndsWith("devenv.exe"))
-                        {
-                            vsDevenvPath = ExternalScriptEditorPath;
-                        }
-                    }
+                    vsDevenvPath = Environment.GetEnvironmentVariable("ILRuntime_ScriptEditor");
+
                     if (string.IsNullOrEmpty(vsDevenvPath))
                     {
-                        if (!string.IsNullOrEmpty(VSHomePath))
-                            vsDevenvPath = Path.Combine(VSHomePath, @"Common7\IDE\devenv.exe");
+                        if (!string.IsNullOrEmpty(ExternalScriptEditorPath))
+                        {
+                            if (ExternalScriptEditorPath.EndsWith("devenv.exe"))
+                            {
+                                vsDevenvPath = ExternalScriptEditorPath;
+                            }
+                        }
+                        if (string.IsNullOrEmpty(vsDevenvPath))
+                        {
+                            if (!string.IsNullOrEmpty(VSHomePath))
+                                vsDevenvPath = Path.Combine(VSHomePath, @"Common7\IDE\devenv.exe");
+                        }
                     }
                     if (vsDevenvPath == null)
                     {
@@ -363,26 +387,26 @@ namespace UnityEditor.ILRuntime.Extensions
             }
         }
 
-        public static string MSBuildPath
-        {
-            get
-            {
-                if (msBuildPath == null)
-                {
-                    if (!string.IsNullOrEmpty(VSHomePath))
-                        msBuildPath = Path.Combine(VSHomePath, @"MSBuild\Current\Bin\MSBuild.exe");
-                    else
-                        msBuildPath = string.Empty;
-                }
-                return msBuildPath;
-            }
-        }
+        //public static string MSBuildPath
+        //{
+        //    get
+        //    {
+        //        if (msBuildPath == null)
+        //        {
+        //            if (!string.IsNullOrEmpty(VSHomePath))
+        //                msBuildPath = Path.Combine(VSHomePath, @"MSBuild\Current\Bin\MSBuild.exe");
+        //            else
+        //                msBuildPath = string.Empty;
+        //        }
+        //        return msBuildPath;
+        //    }
+        //}
 
 
         [InitializeOnLoad]
         public class EditorWindowFocusUtility
         {
-            public static event Action<bool> OnUnityEditorFocus = (focus) => { };
+            public static event Action<bool> OnUnityEditorFocus;
             private static bool _appFocused;
             static EditorWindowFocusUtility()
             {
@@ -391,6 +415,9 @@ namespace UnityEditor.ILRuntime.Extensions
 
             private static void Update()
             {
+                if (OnUnityEditorFocus == null)
+                    return;
+
                 if (!_appFocused && UnityEditorInternal.InternalEditorUtility.isApplicationActive)
                 {
                     _appFocused = UnityEditorInternal.InternalEditorUtility.isApplicationActive;

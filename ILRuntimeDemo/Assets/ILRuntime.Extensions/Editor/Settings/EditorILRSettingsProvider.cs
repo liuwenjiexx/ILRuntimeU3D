@@ -61,11 +61,8 @@ namespace UnityEditor.ILRuntime.Extensions
             }
             else
             {
-                if (string.IsNullOrEmpty(ILRProjectHelper.VSHomePath))
-                {
-                    lbl.text = "Error: Require set 'VisualStudio' environment variable";
-                    lbl.parent.Q<Label>(null, "label").AddToClassList("error");
-                }
+                lbl.text = "Error: Require set 'ILRuntime_ScriptEditor' environment variable";
+                lbl.parent.Q<Label>(null, "label").AddToClassList("error");
             }
 
             var txtProjPathField = settingsRoot.Q<TextField>("proj_path");

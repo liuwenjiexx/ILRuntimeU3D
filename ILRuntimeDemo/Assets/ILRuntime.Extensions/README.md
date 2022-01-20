@@ -10,11 +10,9 @@
 
 ![Settings](Doc~/Images/Settings.png)
 
+- IDE
 
-
-- Visual Studio
-
-  VS 的安装目录，系统添加 `VisualStudio` 环境变量
+  VS 的安装目录，系统添加 `ILRuntime_ScriptEditor` 环境变量，环境变量修改后需要退出 `Unity Hub` 才生效，区分编辑器 ILR 使用 VS2019，Unity 工程使用其它编辑器 VS2022 或 Rider
 
 - Project File
 

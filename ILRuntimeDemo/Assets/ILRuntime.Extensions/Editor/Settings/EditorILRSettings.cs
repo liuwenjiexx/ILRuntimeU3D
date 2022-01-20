@@ -58,8 +58,9 @@ namespace UnityEditor.ILRuntime.Extensions
         private bool isDebug = true;
         public static bool IsDebug
         {
-            get => Settings.isDebug;
-            set => Provider.SetProperty(nameof(IsDebug), ref Settings.isDebug, value);
+            get => EditorUserBuildSettings.development;
+            //get => Settings.isDebug;
+            //set => Provider.SetProperty(nameof(IsDebug), ref Settings.isDebug, value);
         }
 
 
